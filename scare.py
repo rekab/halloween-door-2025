@@ -12,16 +12,16 @@ import threading
 from datetime import datetime
 from pathlib import Path
 
-# Check platform
-if sys.platform != 'darwin':
-    print("⚠️  WARNING: This script is designed for macOS (uses ImageGrab)")
-    print("   It may not work correctly on other platforms")
+# Platform detection
+PLATFORM = sys.platform
+log_platform = "macOS" if PLATFORM == "darwin" else "Linux" if PLATFORM == "linux" else "Unknown"
 
 try:
     import cv2
     import numpy as np
-    from PIL import Image, ImageDraw, ImageFont, ImageGrab
+    from PIL import Image, ImageDraw, ImageFont
     import google.generativeai as genai
+    from mss import mss
 except ImportError as e:
     print(f"❌ Missing dependency: {e}")
     print("   Run: pip install -r requirements.txt")
@@ -233,9 +233,25 @@ def create_placeholder_image(screenshot_pil, image_count, config):
         ]
 
         try:
-            # Try to use system font
-            font = ImageFont.truetype('/System/Library/Fonts/Helvetica.ttc', 80)
-            small_font = ImageFont.truetype('/System/Library/Fonts/Helvetica.ttc', 40)
+            # Try to use system font (cross-platform)
+            font_paths = [
+                '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf',  # Linux
+                '/System/Library/Fonts/Helvetica.ttc',  # macOS
+                'C:\\Windows\\Fonts\\arial.ttf',  # Windows
+            ]
+
+            font = None
+            for font_path in font_paths:
+                try:
+                    font = ImageFont.truetype(font_path, 80)
+                    small_font = ImageFont.truetype(font_path, 40)
+                    break
+                except:
+                    continue
+
+            if font is None:
+                raise Exception("No system fonts found")
+
         except:
             log("  Could not load system font, using default", "WARNING")
             font = ImageFont.load_default()
@@ -270,22 +286,46 @@ def create_placeholder_image(screenshot_pil, image_count, config):
 # ============================================================================
 
 def capture_screen(config):
-    """Capture screenshot of specified region or full screen"""
+    """Capture screenshot of specified region or full screen (cross-platform using mss)"""
     try:
-        region = config.get('capture_region')
+        with mss() as sct:
+            region = config.get('capture_region')
+            monitor_num = config.get('screen_number', 0)
 
-        if region:
-            log(f"  Capturing region: {region}", "DEBUG")
-            screenshot = ImageGrab.grab(bbox=region)
-        else:
-            log(f"  Capturing full screen", "DEBUG")
-            screenshot = ImageGrab.grab()
+            if region:
+                # Custom region: {"top": y1, "left": x1, "width": w, "height": h}
+                log(f"  Capturing region: {region}", "DEBUG")
 
-        log(f"  Screenshot captured: {screenshot.size[0]}x{screenshot.size[1]}", "DEBUG")
-        return screenshot
+                # If region is [x1, y1, x2, y2], convert to mss format
+                if isinstance(region, list) and len(region) == 4:
+                    x1, y1, x2, y2 = region
+                    monitor = {
+                        "top": y1,
+                        "left": x1,
+                        "width": x2 - x1,
+                        "height": y2 - y1
+                    }
+                else:
+                    monitor = region
+            else:
+                # Capture entire monitor (1 = first monitor, 0 = all monitors)
+                monitor_index = monitor_num + 1  # mss uses 1-based indexing for monitors
+                log(f"  Capturing monitor #{monitor_num}", "DEBUG")
+                monitor = sct.monitors[monitor_index]
+
+            # Capture screenshot
+            sct_img = sct.grab(monitor)
+
+            # Convert mss image to PIL Image
+            screenshot = Image.frombytes('RGB', sct_img.size, sct_img.rgb)
+
+            log(f"  Screenshot captured: {screenshot.size[0]}x{screenshot.size[1]}", "DEBUG")
+            return screenshot
 
     except Exception as e:
         log(f"Screenshot failed: {e}", "ERROR")
+        import traceback
+        log(f"  Traceback: {traceback.format_exc()}", "DEBUG")
         return None
 
 
@@ -540,6 +580,8 @@ def main():
     log("=" * 80)
     log("🎃 HALLOWEEN DOORBELL SCARE SYSTEM 🎃", "SCARE")
     log("=" * 80)
+    log("")
+    log(f"Platform: {log_platform} ({PLATFORM})", "INFO")
     log("")
 
     # Load configuration

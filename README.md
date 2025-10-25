@@ -49,11 +49,12 @@ halloween-door-2025/
 
 ## ⚙️ Requirements
 
-- **macOS** (uses ImageGrab for screenshots)
+- **Linux ARM64** (tested), macOS, or Windows (uses mss for cross-platform screen capture)
 - **Python 3.9+**
 - **Google Gemini API key** (free tier works)
 - **Chrome** (for viewing Nest doorbell)
 - **Projector/Chromebook** (for display)
+- **X11 or Wayland display server** (Linux)
 
 ## 🚀 Quick Start (15 Minutes)
 
@@ -188,13 +189,38 @@ While `scare.py` is running:
 }
 ```
 
-### Find Your Mac's IP Address
+### Find Your IP Address
 
+**Linux:**
+```bash
+hostname -I
+# or
+ip addr show | grep "inet " | grep -v 127.0.0.1
+```
+
+**macOS:**
 ```bash
 ifconfig | grep "inet " | grep -v 127.0.0.1
 ```
 
 Look for something like `192.168.1.100`
+
+### Linux ARM64 Specific Tips
+
+**Font issues?** Install DejaVu fonts:
+```bash
+sudo apt-get install fonts-dejavu-core
+```
+
+**Display server check:**
+```bash
+echo $XDG_SESSION_TYPE  # Should show 'x11' or 'wayland'
+```
+
+**Test screen capture:**
+```bash
+python3 -c "from mss import mss; import pprint; pprint.pprint(mss().monitors)"
+```
 
 ## 📊 Cost Estimation
 
@@ -263,8 +289,19 @@ pip install google-generativeai
 ```
 
 ### "Screenshot failed"
-- **macOS Permissions**: System Preferences → Security & Privacy → Screen Recording
+
+**Linux:**
+- No special permissions needed for X11
+- For Wayland, may need to run under X11 session
+- Test with: `python3 -c "from mss import mss; print(mss().monitors)"`
+
+**macOS:**
+- System Preferences → Security & Privacy → Screen Recording
 - Grant Terminal/Python screen recording permission
+
+**General:**
+- Check that display server is running
+- Verify mss is installed: `pip show mss`
 
 ### "Gemini API error"
 - Check API key in `config.json`
