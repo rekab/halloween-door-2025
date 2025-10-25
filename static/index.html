@@ -231,22 +231,16 @@
             } else if (resizeState.active) {
                 const container = resizeState.container;
 
-                // Calculate new width based on mouse movement
+                // Calculate change in position
                 const deltaX = e.clientX - resizeState.startX;
                 const deltaY = e.clientY - resizeState.startY;
 
-                // Use the diagonal distance to scale proportionally
-                const diagonal = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-                const originalDiagonal = Math.sqrt(
-                    resizeState.startWidth * resizeState.startWidth +
-                    resizeState.startHeight * resizeState.startHeight
-                );
+                // Use the average of X and Y deltas for diagonal resizing
+                // This makes it intuitive: drag down-right to grow, up-left to shrink
+                const averageDelta = (deltaX + deltaY) / 2;
 
-                // Scale factor based on diagonal movement
-                const scaleFactor = diagonal / originalDiagonal;
-                const direction = (deltaX + deltaY > 0) ? 1 : -1; // Determine if growing or shrinking
-
-                const newWidth = resizeState.startWidth * (1 + (scaleFactor - 1) * direction);
+                // Calculate new width, maintaining aspect ratio
+                const newWidth = resizeState.startWidth + averageDelta;
                 const newHeight = newWidth / resizeState.aspectRatio;
 
                 // Ensure minimum size
