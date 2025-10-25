@@ -48,12 +48,19 @@
             pointer-events: none;
             user-select: none;
         }
-        #scareImage {
+        .image-wrapper {
+            position: relative;
             width: 100%;
             height: 100%;
-            object-fit: cover;
             transform: rotate(90deg);
             transform-origin: center;
+        }
+        #scareImage {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            height: 100%;
+            width: auto;
             pointer-events: none;
             user-select: none;
             -webkit-user-drag: none;
@@ -105,7 +112,9 @@
 
     <!-- Scare Image Container (independent viewport) -->
     <div id="scareContainer" class="viewport-container">
-        <img id="scareImage" src="test_scare.png" alt="Scare Image" draggable="false">
+        <div class="image-wrapper">
+            <img id="scareImage" src="test_scare.png" alt="Scare Image" draggable="false">
+        </div>
         <div class="resize-handle" id="scareResizeHandle"></div>
     </div>
 
