@@ -175,7 +175,7 @@ def generate_scary_image_gemini(screenshot_pil, config):
             "Add a terrifying ghostly figure with hollow eyes standing BEHIND the people at the door, horror movie style, dark shadows, eerie atmosphere",
             "Add a grim reaper with a dark hooded cloak looming menacingly BEHIND the people, pale skeletal face visible, supernatural horror",
             "Add a creepy pale ghost with long black hair and a white dress lurking BEHIND the people, horror movie aesthetic, unsettling presence",
-            "Add a shadowy demonic figure with glowing red eyes emerging from the darkness BEHIND the people, nightmare fuel, terrifying",
+            "Add a scary demonic figure with glowing red eyes emerging from the darkness BEHIND the people, nightmare fuel, terrifying",
         ]
         prompt = random.choice(prompts)
 

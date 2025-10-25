@@ -4,7 +4,7 @@
   "motion_check_interval": 1,
   "motion_threshold": 5000,
 
-  "scare_loop_interval": 7,
+  "scare_loop_interval": 10,
   "max_images_per_group": 10,
 
   "cooldown_duration": 5,
