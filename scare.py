@@ -8,6 +8,7 @@ import os
 import sys
 import json
 import time
+import random
 import threading
 from datetime import datetime
 from pathlib import Path
@@ -169,13 +170,14 @@ def generate_scary_image_gemini(screenshot_pil, config):
         # Initialize Gemini client for image generation
         client = genai_image.Client()
 
-        prompt = (
-            "Add a photorealistic, menacing angry ghost haunting right behind the people "
-            "in this doorbell camera image. The ghost should look genuinely threatening and "
-            "malevolent - a furious spirit with intense, rage-filled eyes and an expression "
-            "of deep hatred. Make it look real and believable, not cartoonish. The ghost "
-            "should be very close to the people, creating an unsettling presence."
-        )
+        # Randomly select a scary character prompt
+        prompts = [
+            "Add a terrifying ghostly figure with hollow eyes standing BEHIND the people at the door, horror movie style, dark shadows, eerie atmosphere",
+            "Add a grim reaper with a dark hooded cloak looming menacingly BEHIND the people, pale skeletal face visible, supernatural horror",
+            "Add a creepy pale ghost with long black hair and a white dress lurking BEHIND the people, horror movie aesthetic, unsettling presence",
+            "Add a shadowy demonic figure with glowing red eyes emerging from the darkness BEHIND the people, nightmare fuel, terrifying",
+        ]
+        prompt = random.choice(prompts)
 
         log(f"  Prompt: {prompt[:80]}...", "DEBUG")
         log(f"  Sending to Nano Banana (this takes ~12 seconds)...", "DEBUG")
