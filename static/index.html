@@ -206,6 +206,7 @@
         // =====================================================================
 
         let currentState = "VIDEO";
+        let currentImageUrl = null;
         const pollingInterval = 500; // ms
         const scareImage = document.getElementById('scareImage');
         const video = document.querySelector('video');
@@ -218,10 +219,21 @@
             fetch(`status.json?t=${Date.now()}`)
                 .then(response => response.json())
                 .then(data => {
-                    if (data.state !== currentState) {
-                        console.log(`State change: ${currentState} → ${data.state}`);
+                    // Detect if state OR image URL has changed
+                    const stateChanged = data.state !== currentState;
+                    const imageChanged = data.image_url !== currentImageUrl;
+
+                    if (stateChanged || imageChanged) {
+                        if (stateChanged) {
+                            console.log(`State change: ${currentState} → ${data.state}`);
+                        }
+                        if (imageChanged && data.state === "IMAGE") {
+                            console.log(`Image change: ${currentImageUrl} → ${data.image_url}`);
+                        }
+
                         switchState(data.state, data.image_url);
                         currentState = data.state;
+                        currentImageUrl = data.image_url;
                     }
                 })
                 .catch(error => {
