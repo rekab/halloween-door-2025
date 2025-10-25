@@ -1,0 +1,19 @@
+{
+  "gemini_api_key": "",
+
+  "debug_mode": true,
+
+  "motion_check_interval": 2,
+  "motion_threshold": 5000,
+
+  "scare_loop_interval": 3,
+  "max_images_per_group": 10,
+
+  "cooldown_duration": 5,
+
+  "output_dir": "static/generated",
+  "status_file": "static/status.json",
+
+  "capture_region": null,
+  "screen_number": 0
+}

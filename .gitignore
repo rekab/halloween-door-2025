@@ -205,3 +205,24 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# ============================================================================
+# Halloween Scare System Specific
+# ============================================================================
+
+# Generated scare images
+static/generated/*.png
+static/generated/*.jpg
+static/generated/*.jpeg
+
+# Keep the directory
+!static/generated/.gitkeep
+
+# Status file (auto-generated)
+static/status.json
+static/status.tmp
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride

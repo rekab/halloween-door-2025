@@ -34,6 +34,21 @@
             object-fit: cover;
             transform: rotate(90deg);
             transform-origin: center;
+            transition: opacity 0.5s ease;
+        }
+        #scareImage {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transform: rotate(90deg);
+            transform-origin: center;
+            display: none;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+            z-index: 10;
         }
         #controls {
             position: fixed;
@@ -76,6 +91,7 @@
             <source src="creepyhands2.mp4" type="video/mp4">
             Your browser does not support the video tag.
         </video>
+        <img id="scareImage" alt="Scare Image">
         <div id="resizeHandle"></div>
     </div>
     <div id="controls">
@@ -184,6 +200,77 @@
 
         // Initial position and size
         resetPosition();
+
+        // =====================================================================
+        // SCARE SYSTEM - STATUS POLLING
+        // =====================================================================
+
+        let currentState = "VIDEO";
+        const pollingInterval = 500; // ms
+        const scareImage = document.getElementById('scareImage');
+        const video = document.querySelector('video');
+
+        console.log('🎃 Scare system initialized');
+
+        // Start polling status.json
+        function checkStatus() {
+            // Cache-busting to prevent stale reads
+            fetch(`status.json?t=${Date.now()}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.state !== currentState) {
+                        console.log(`State change: ${currentState} → ${data.state}`);
+                        switchState(data.state, data.image_url);
+                        currentState = data.state;
+                    }
+                })
+                .catch(error => {
+                    // Silently fail - status.json might not exist yet
+                    if (currentState !== "VIDEO") {
+                        console.error('Status check failed:', error);
+                    }
+                });
+        }
+
+        function switchState(newState, imageUrl) {
+            if (newState === "IMAGE" && imageUrl) {
+                console.log(`👻 SCARE! Showing image: ${imageUrl}`);
+
+                // Fade out video
+                video.style.opacity = '0';
+
+                setTimeout(() => {
+                    // Load and show image with cache-busting
+                    scareImage.src = imageUrl + `?t=${Date.now()}`;
+                    scareImage.style.display = 'block';
+
+                    // Fade in image
+                    setTimeout(() => {
+                        scareImage.style.opacity = '1';
+                    }, 50);
+                }, 500);
+
+            } else if (newState === "VIDEO") {
+                console.log('📹 Returning to video');
+
+                // Fade out image
+                scareImage.style.opacity = '0';
+
+                setTimeout(() => {
+                    scareImage.style.display = 'none';
+
+                    // Fade in video
+                    video.style.opacity = '1';
+                }, 500);
+            }
+        }
+
+        // Start polling
+        setInterval(checkStatus, pollingInterval);
+        console.log(`⏱️  Polling status.json every ${pollingInterval}ms`);
+
+        // Initial check
+        checkStatus();
     </script>
 </body>
 </html>
