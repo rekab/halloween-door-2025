@@ -132,7 +132,7 @@ def check_proximity_gemini(screenshot_pil, config):
 
         prompt = (
             "Black and white night vision doorbell camera image. "
-            "Are there people visible within 3 feet of the camera? "
+            "Are there people visible within 3 feet of the camera AND facing toward the camera? "
             "Answer ONLY: YES or NO"
         )
 
@@ -170,10 +170,11 @@ def generate_scary_image_gemini(screenshot_pil, config):
         client = genai_image.Client()
 
         prompt = (
-            "Add a TERRIFYING ghost with hollow black eyes, gaping mouth, and pale "
-            "skeletal face RIGHT BEHIND the people in this black and white doorbell "
-            "image. The ghost should be very close and menacing, dramatic horror "
-            "lighting with high contrast, jump scare aesthetic, nightmare fuel"
+            "Add a photorealistic, menacing angry ghost haunting right behind the people "
+            "in this doorbell camera image. The ghost should look genuinely threatening and "
+            "malevolent - a furious spirit with intense, rage-filled eyes and an expression "
+            "of deep hatred. Make it look real and believable, not cartoonish. The ghost "
+            "should be very close to the people, creating an unsettling presence."
         )
 
         log(f"  Prompt: {prompt[:80]}...", "DEBUG")
