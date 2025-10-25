@@ -12,6 +12,7 @@ import threading
 from datetime import datetime
 from pathlib import Path
 from dotenv import load_dotenv
+from io import BytesIO
 
 # Platform detection
 PLATFORM = sys.platform
@@ -21,7 +22,8 @@ try:
     import cv2
     import numpy as np
     from PIL import Image, ImageDraw, ImageFont
-    import google.generativeai as genai
+    import google.generativeai as genai_vision  # Old API for vision/text
+    from google import genai as genai_image     # New API for image generation
     from mss import mss
 except ImportError as e:
     print(f"❌ Missing dependency: {e}")
@@ -102,7 +104,7 @@ def load_config():
 # ============================================================================
 
 def init_gemini(api_key):
-    """Initialize Gemini API client"""
+    """Initialize Gemini API client (for vision/text API)"""
     if not api_key:
         log("No Gemini API key provided - running in placeholder-only mode", "WARNING")
         return None
@@ -110,7 +112,7 @@ def init_gemini(api_key):
     log("Initializing Gemini API client...")
 
     try:
-        genai.configure(api_key=api_key)
+        genai_vision.configure(api_key=api_key)
         log("Gemini API client initialized", "SUCCESS")
         return True
     except Exception as e:
@@ -126,7 +128,7 @@ def check_proximity_gemini(screenshot_pil, config):
     log("🔍 Checking proximity with Gemini Vision API...", "DEBUG")
 
     try:
-        model = genai.GenerativeModel('gemini-2.0-flash-exp')
+        model = genai_vision.GenerativeModel('gemini-2.0-flash-exp')
 
         prompt = (
             "Black and white night vision doorbell camera image. "
@@ -164,8 +166,8 @@ def generate_scary_image_gemini(screenshot_pil, config):
     log("👻 Generating scary image with Nano Banana...", "SCARE")
 
     try:
-        # Using gemini-2.0-flash-exp for image generation
-        model = genai.GenerativeModel('gemini-2.0-flash-exp')
+        # Initialize Gemini client for image generation
+        client = genai_image.Client()
 
         prompt = (
             "Add a TERRIFYING ghost with hollow black eyes, gaping mouth, and pale "
@@ -179,23 +181,45 @@ def generate_scary_image_gemini(screenshot_pil, config):
 
         start_time = time.time()
 
-        response = model.generate_content([prompt, screenshot_pil])
+        # Use gemini-2.5-flash-image model for image generation
+        response = client.models.generate_content(
+            model="gemini-2.5-flash-image",
+            contents=[prompt, screenshot_pil],
+        )
 
         elapsed = time.time() - start_time
 
         log(f"  Nano Banana completed in {elapsed:.2f}s", "SUCCESS")
-
-        # Note: The actual implementation depends on Gemini's image generation API
-        # For now, this is a placeholder - you may need to adjust based on the actual API
         log("  Extracting generated image...", "DEBUG")
 
-        # This will need to be updated based on actual Gemini image generation response
-        # For now, return the original as a placeholder
-        log("⚠️  Image generation API format needs verification", "WARNING")
+        # Extract image from response
+        if hasattr(response, 'candidates') and len(response.candidates) > 0:
+            candidate = response.candidates[0]
+
+            if hasattr(candidate, 'content') and hasattr(candidate.content, 'parts'):
+                for part in candidate.content.parts:
+                    # Check for text response
+                    if hasattr(part, 'text') and part.text is not None:
+                        log(f"  API response text: {part.text}", "DEBUG")
+
+                    # Extract generated image
+                    if hasattr(part, 'inline_data') and part.inline_data is not None:
+                        if hasattr(part.inline_data, 'data'):
+                            log("✅ Found generated image in response!", "SUCCESS")
+                            image_bytes = part.inline_data.data
+                            generated_image = Image.open(BytesIO(image_bytes))
+                            log(f"  Generated image size: {generated_image.size}", "SUCCESS")
+                            return generated_image
+
+        # If we got here, no image was found
+        log("⚠️  No image data found in response", "WARNING")
+        log("  Returning original image as fallback", "WARNING")
         return screenshot_pil
 
     except Exception as e:
         log(f"Nano Banana generation error: {e}", "ERROR")
+        import traceback
+        log(f"  Traceback: {traceback.format_exc()}", "DEBUG")
         return None
 
 
@@ -594,6 +618,8 @@ def main():
     api_key = os.getenv('GEMINI_API_KEY', '')
     if api_key:
         log("API key loaded from environment", "SUCCESS")
+        # Set GOOGLE_API_KEY for genai.Client() API
+        os.environ['GOOGLE_API_KEY'] = api_key
     else:
         log("No GEMINI_API_KEY found in .env file", "WARNING")
     gemini_enabled = init_gemini(api_key)

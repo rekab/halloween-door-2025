@@ -10,7 +10,11 @@ pillow>=10.0.0
 mss>=9.0.0
 
 # Google Gemini API for vision and image generation
+# Note: We need BOTH packages:
+# - google-generativeai: Old API for text/vision (check_proximity_gemini)
+# - google-genai: New API for image generation (generate_scary_image_gemini)
 google-generativeai>=0.3.0
+google-genai>=0.1.0
 
 # Environment variable management
 python-dotenv>=1.0.0
