@@ -222,7 +222,13 @@ static/generated/*.jpeg
 static/status.json
 static/status.tmp
 
+# Test output directory
+test_output/
+
 # macOS
 .DS_Store
 .AppleDouble
 .LSOverride
+
+# vim
+*.swp
