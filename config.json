@@ -1,6 +1,4 @@
 {
-  "gemini_api_key": "",
-
   "debug_mode": true,
 
   "motion_check_interval": 2,

@@ -11,6 +11,7 @@ import time
 import threading
 from datetime import datetime
 from pathlib import Path
+from dotenv import load_dotenv
 
 # Platform detection
 PLATFORM = sys.platform
@@ -65,7 +66,6 @@ def load_config():
     if not config_path.exists():
         log("config.json not found, creating default...", "WARNING")
         default_config = {
-            "gemini_api_key": "",
             "debug_mode": True,
             "motion_check_interval": 2,
             "motion_threshold": 5000,
@@ -82,7 +82,6 @@ def load_config():
             json.dump(default_config, f, indent=2)
 
         log(f"Created default config at {config_path}", "SUCCESS")
-        log("⚠️  Please edit config.json and add your Gemini API key", "WARNING")
         return default_config
 
     with open(config_path, 'r') as f:
@@ -584,11 +583,19 @@ def main():
     log(f"Platform: {log_platform} ({PLATFORM})", "INFO")
     log("")
 
+    # Load environment variables from .env file
+    log("Loading environment variables from .env...")
+    load_dotenv()
+
     # Load configuration
     config = load_config()
 
-    # Initialize Gemini
-    api_key = config.get('gemini_api_key', '')
+    # Initialize Gemini with API key from environment
+    api_key = os.getenv('GEMINI_API_KEY', '')
+    if api_key:
+        log("API key loaded from environment", "SUCCESS")
+    else:
+        log("No GEMINI_API_KEY found in .env file", "WARNING")
     gemini_enabled = init_gemini(api_key)
 
     # Create output directory
