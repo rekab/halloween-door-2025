@@ -17,7 +17,7 @@ try:
     import cv2
     import numpy as np
     from PIL import Image, ImageDraw, ImageFont
-    import google.generativeai as genai
+    import google.generativeai as genai_vision  # Old API for vision/text
     from mss import mss
 except ImportError as e:
     print(f"❌ Missing dependency: {e}")
@@ -182,7 +182,7 @@ def init_gemini(api_key):
     log("Initializing Gemini API client...")
 
     try:
-        genai.configure(api_key=api_key)
+        genai_vision.configure(api_key=api_key)
         log("Gemini API client initialized", "SUCCESS")
         return True
     except Exception as e:
@@ -198,7 +198,7 @@ def check_proximity_gemini(screenshot_pil, config):
     log("🔍 Checking proximity with Gemini Vision API...", "DEBUG")
 
     try:
-        model = genai.GenerativeModel('gemini-2.0-flash-exp')
+        model = genai_vision.GenerativeModel('gemini-2.0-flash-exp')
 
         prompt = (
             "Black and white night vision doorbell camera image. "

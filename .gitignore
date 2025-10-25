@@ -222,6 +222,9 @@ static/generated/*.jpeg
 static/status.json
 static/status.tmp
 
+# Test scare image (user-provided, not committed)
+static/test_scare.png
+
 # Test output directory
 test_output/
 

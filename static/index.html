@@ -12,13 +12,20 @@
             background-color: white;
             overflow: hidden;
         }
-        #videoContainer {
+        .viewport-container {
             position: absolute;
             overflow: hidden;
             min-width: 100px;
             min-height: 100px;
+            cursor: move;
         }
-        #resizeHandle {
+        #videoContainer {
+            display: block;
+        }
+        #scareContainer {
+            display: none;
+        }
+        .resize-handle {
             position: absolute;
             right: 0;
             bottom: 0;
@@ -27,6 +34,10 @@
             background: #666;
             cursor: se-resize;
             display: none;
+            z-index: 100;
+        }
+        #scareResizeHandle {
+            background: #ff0000;
         }
         video {
             width: 100%;
@@ -34,21 +45,18 @@
             object-fit: cover;
             transform: rotate(90deg);
             transform-origin: center;
-            transition: opacity 0.5s ease;
+            pointer-events: none;
+            user-select: none;
         }
         #scareImage {
-            position: absolute;
-            top: 0;
-            left: 0;
             width: 100%;
             height: 100%;
             object-fit: cover;
             transform: rotate(90deg);
             transform-origin: center;
-            display: none;
-            opacity: 0;
-            transition: opacity 0.5s ease;
-            z-index: 10;
+            pointer-events: none;
+            user-select: none;
+            -webkit-user-drag: none;
         }
         #controls {
             position: fixed;
@@ -86,17 +94,36 @@
         <input type="checkbox" id="showControls" checked> Show Controls
     </label>
 
-    <div id="videoContainer">
-        <video autoplay loop muted playsinline>
+    <!-- Video Container -->
+    <div id="videoContainer" class="viewport-container">
+        <video autoplay loop muted playsinline draggable="false">
             <source src="creepyhands2.mp4" type="video/mp4">
             Your browser does not support the video tag.
         </video>
-        <img id="scareImage" alt="Scare Image">
-        <div id="resizeHandle"></div>
+        <div class="resize-handle" id="videoResizeHandle"></div>
     </div>
+
+    <!-- Scare Image Container (independent viewport) -->
+    <div id="scareContainer" class="viewport-container">
+        <img id="scareImage" src="test_scare.png" alt="Scare Image" draggable="false">
+        <div class="resize-handle" id="scareResizeHandle"></div>
+    </div>
+
     <div id="controls">
-        <button onclick="toggleBorder()">Toggle Border</button>
-        <button onclick="resetPosition()">Reset Position</button>
+        <div>
+            <button onclick="toggleVideoBorder()">Toggle Video Border</button>
+            <button onclick="resetVideoPosition()">Reset Video</button>
+        </div>
+        <div style="margin-top: 10px;">
+            <button onclick="toggleScareBorder()">Toggle Scare Border</button>
+            <button onclick="resetScarePosition()">Reset Scare</button>
+        </div>
+        <div style="margin-top: 10px;">
+            <label>
+                <input type="checkbox" id="debugMode" onchange="toggleDebugMode()">
+                Debug Mode (Show Test Scare)
+            </label>
+        </div>
         <div id="audioControls">
             <button onclick="toggleSound()">Toggle Sound</button>
             <input type="range" id="volumeSlider" min="0" max="1" step="0.1" value="0.5" onchange="updateVolume()">
@@ -109,81 +136,180 @@
     </audio>
 
     <script>
-        const container = document.getElementById('videoContainer');
-        const resizeHandle = document.getElementById('resizeHandle');
+        // =====================================================================
+        // ELEMENT REFERENCES
+        // =====================================================================
+        const videoContainer = document.getElementById('videoContainer');
+        const scareContainer = document.getElementById('scareContainer');
+        const videoResizeHandle = document.getElementById('videoResizeHandle');
+        const scareResizeHandle = document.getElementById('scareResizeHandle');
         const audio = document.getElementById('soundTrack');
         const volumeSlider = document.getElementById('volumeSlider');
         const controls = document.getElementById('controls');
         const showControlsCheckbox = document.getElementById('showControls');
         const controlToggle = document.getElementById('controlToggle');
-        let isDragging = false;
-        let isResizing = false;
-        let startX, startY, startWidth, startHeight;
-        let borderVisible = false;
+        const debugModeCheckbox = document.getElementById('debugMode');
+        const video = document.querySelector('video');
+        const scareImage = document.getElementById('scareImage');
+
+        // =====================================================================
+        // DRAG/RESIZE STATE
+        // =====================================================================
+        let dragState = {
+            active: false,
+            container: null,
+            startX: 0,
+            startY: 0
+        };
+
+        let resizeState = {
+            active: false,
+            container: null,
+            startX: 0,
+            startY: 0,
+            startWidth: 0,
+            startHeight: 0,
+            aspectRatio: 1
+        };
+
+        // Border visibility
+        let videoBorderVisible = false;
+        let scareBorderVisible = false;
+
+        // Sound state
         let soundPlaying = false;
 
         // Set initial volume
         audio.volume = volumeSlider.value;
 
-        // Control visibility toggle
+        // =====================================================================
+        // CONTROL VISIBILITY
+        // =====================================================================
         showControlsCheckbox.addEventListener('change', function() {
             controls.style.opacity = this.checked ? '1' : '0';
             controls.style.pointerEvents = this.checked ? 'auto' : 'none';
         });
 
-        // Move control toggle when controls are hidden
-        showControlsCheckbox.addEventListener('change', function() {
-            if (this.checked) {
-                controlToggle.style.right = '10px';
-            } else {
-                controlToggle.style.right = '10px';
-            }
-        });
-
-        container.addEventListener('mousedown', (e) => {
-            if (e.target === resizeHandle) {
-                isResizing = true;
-                startX = e.clientX;
-                startY = e.clientY;
-                startWidth = parseInt(document.defaultView.getComputedStyle(container).width, 10);
-                startHeight = parseInt(document.defaultView.getComputedStyle(container).height, 10);
-            } else {
-                isDragging = true;
-                startX = e.clientX - container.offsetLeft;
-                startY = e.clientY - container.offsetTop;
-            }
-        });
+        // =====================================================================
+        // DRAG AND RESIZE HANDLERS
+        // =====================================================================
+        function setupDragResize(container, resizeHandle) {
+            container.addEventListener('mousedown', (e) => {
+                if (e.target === resizeHandle) {
+                    // Start resizing
+                    resizeState.active = true;
+                    resizeState.container = container;
+                    resizeState.startX = e.clientX;
+                    resizeState.startY = e.clientY;
+                    resizeState.startWidth = parseInt(document.defaultView.getComputedStyle(container).width, 10);
+                    resizeState.startHeight = parseInt(document.defaultView.getComputedStyle(container).height, 10);
+                    resizeState.aspectRatio = resizeState.startWidth / resizeState.startHeight;
+                    e.preventDefault();
+                } else if (e.target === container) {
+                    // Start dragging (only if clicking the container itself, not children)
+                    dragState.active = true;
+                    dragState.container = container;
+                    dragState.startX = e.clientX - container.offsetLeft;
+                    dragState.startY = e.clientY - container.offsetTop;
+                    e.preventDefault();
+                }
+            });
+        }
 
         document.addEventListener('mousemove', (e) => {
-            if (isDragging) {
-                container.style.left = (e.clientX - startX) + 'px';
-                container.style.top = (e.clientY - startY) + 'px';
-            } else if (isResizing) {
-                const width = startWidth + (e.clientX - startX);
-                const height = startHeight + (e.clientY - startY);
-                container.style.width = width + 'px';
-                container.style.height = height + 'px';
+            if (dragState.active) {
+                const container = dragState.container;
+                const left = e.clientX - dragState.startX;
+                const top = e.clientY - dragState.startY;
+                container.style.left = left + 'px';
+                container.style.top = top + 'px';
+
+                // Save position if it's scare container
+                if (container === scareContainer) {
+                    saveScarePosition();
+                }
+            } else if (resizeState.active) {
+                const container = resizeState.container;
+
+                // Calculate new width based on mouse movement
+                const deltaX = e.clientX - resizeState.startX;
+                const deltaY = e.clientY - resizeState.startY;
+
+                // Use the diagonal distance to scale proportionally
+                const diagonal = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+                const originalDiagonal = Math.sqrt(
+                    resizeState.startWidth * resizeState.startWidth +
+                    resizeState.startHeight * resizeState.startHeight
+                );
+
+                // Scale factor based on diagonal movement
+                const scaleFactor = diagonal / originalDiagonal;
+                const direction = (deltaX + deltaY > 0) ? 1 : -1; // Determine if growing or shrinking
+
+                const newWidth = resizeState.startWidth * (1 + (scaleFactor - 1) * direction);
+                const newHeight = newWidth / resizeState.aspectRatio;
+
+                // Ensure minimum size
+                const finalWidth = Math.max(100, newWidth);
+                const finalHeight = Math.max(100, newHeight);
+
+                container.style.width = finalWidth + 'px';
+                container.style.height = finalHeight + 'px';
+
+                // Save size if it's scare container
+                if (container === scareContainer) {
+                    saveScarePosition();
+                }
             }
         });
 
         document.addEventListener('mouseup', () => {
-            isDragging = false;
-            isResizing = false;
+            dragState.active = false;
+            dragState.container = null;
+            resizeState.active = false;
+            resizeState.container = null;
         });
 
-        function toggleBorder() {
-            borderVisible = !borderVisible;
-            container.style.border = borderVisible ? '2px solid #666' : 'none';
-            resizeHandle.style.display = borderVisible ? 'block' : 'none';
+        // Setup both containers
+        setupDragResize(videoContainer, videoResizeHandle);
+        setupDragResize(scareContainer, scareResizeHandle);
+
+        // =====================================================================
+        // BORDER CONTROLS
+        // =====================================================================
+        function toggleVideoBorder() {
+            videoBorderVisible = !videoBorderVisible;
+            videoContainer.style.border = videoBorderVisible ? '2px solid #666' : 'none';
+            videoResizeHandle.style.display = videoBorderVisible ? 'block' : 'none';
         }
 
-        function resetPosition() {
-            container.style.left = '0px';
-            container.style.top = '0px';
-            container.style.width = '50%';
-            container.style.height = '50%';
+        function toggleScareBorder() {
+            scareBorderVisible = !scareBorderVisible;
+            scareContainer.style.border = scareBorderVisible ? '2px solid red' : 'none';
+            scareResizeHandle.style.display = scareBorderVisible ? 'block' : 'none';
         }
 
+        // =====================================================================
+        // POSITION RESET
+        // =====================================================================
+        function resetVideoPosition() {
+            videoContainer.style.left = '0px';
+            videoContainer.style.top = '0px';
+            videoContainer.style.width = '50%';
+            videoContainer.style.height = '50%';
+        }
+
+        function resetScarePosition() {
+            scareContainer.style.left = '0px';
+            scareContainer.style.top = '0px';
+            scareContainer.style.width = '50%';
+            scareContainer.style.height = '50%';
+            saveScarePosition();
+        }
+
+        // =====================================================================
+        // AUDIO CONTROLS
+        // =====================================================================
         function toggleSound() {
             if (soundPlaying) {
                 audio.pause();
@@ -198,8 +324,64 @@
             audio.volume = volumeSlider.value;
         }
 
-        // Initial position and size
-        resetPosition();
+        // =====================================================================
+        // LOCALSTORAGE PERSISTENCE (Scare Container Only)
+        // =====================================================================
+        function saveScarePosition() {
+            localStorage.setItem('scareContainer_left', scareContainer.style.left);
+            localStorage.setItem('scareContainer_top', scareContainer.style.top);
+            localStorage.setItem('scareContainer_width', scareContainer.style.width);
+            localStorage.setItem('scareContainer_height', scareContainer.style.height);
+        }
+
+        function loadScarePosition() {
+            const left = localStorage.getItem('scareContainer_left');
+            const top = localStorage.getItem('scareContainer_top');
+            const width = localStorage.getItem('scareContainer_width');
+            const height = localStorage.getItem('scareContainer_height');
+
+            if (left && top && width && height) {
+                scareContainer.style.left = left;
+                scareContainer.style.top = top;
+                scareContainer.style.width = width;
+                scareContainer.style.height = height;
+                console.log('✅ Restored scare container position from localStorage');
+            } else {
+                // Set defaults
+                resetScarePosition();
+            }
+        }
+
+        // =====================================================================
+        // DEBUG MODE
+        // =====================================================================
+        function toggleDebugMode() {
+            if (debugModeCheckbox.checked) {
+                console.log('🧪 Debug mode enabled - showing test scare image');
+                videoContainer.style.display = 'none';
+                scareContainer.style.display = 'block';
+
+                // Automatically show scare border and resize handle for positioning
+                scareBorderVisible = true;
+                scareContainer.style.border = '2px solid red';
+                scareResizeHandle.style.display = 'block';
+            } else {
+                console.log('📹 Debug mode disabled - showing video');
+                scareContainer.style.display = 'none';
+                videoContainer.style.display = 'block';
+
+                // Hide scare border and resize handle when exiting debug mode
+                scareBorderVisible = false;
+                scareContainer.style.border = 'none';
+                scareResizeHandle.style.display = 'none';
+            }
+        }
+
+        // =====================================================================
+        // INITIALIZATION
+        // =====================================================================
+        resetVideoPosition();
+        loadScarePosition();
 
         // =====================================================================
         // SCARE SYSTEM - STATUS POLLING
@@ -208,13 +390,16 @@
         let currentState = "VIDEO";
         let currentImageUrl = null;
         const pollingInterval = 500; // ms
-        const scareImage = document.getElementById('scareImage');
-        const video = document.querySelector('video');
 
         console.log('🎃 Scare system initialized');
 
         // Start polling status.json
         function checkStatus() {
+            // Don't poll if in debug mode
+            if (debugModeCheckbox.checked) {
+                return;
+            }
+
             // Cache-busting to prevent stale reads
             fetch(`status.json?t=${Date.now()}`)
                 .then(response => response.json())
@@ -248,32 +433,19 @@
             if (newState === "IMAGE" && imageUrl) {
                 console.log(`👻 SCARE! Showing image: ${imageUrl}`);
 
-                // Fade out video
-                video.style.opacity = '0';
+                // Load generated image with cache-busting
+                scareImage.src = imageUrl + `?t=${Date.now()}`;
 
-                setTimeout(() => {
-                    // Load and show image with cache-busting
-                    scareImage.src = imageUrl + `?t=${Date.now()}`;
-                    scareImage.style.display = 'block';
-
-                    // Fade in image
-                    setTimeout(() => {
-                        scareImage.style.opacity = '1';
-                    }, 50);
-                }, 500);
+                // Switch containers: hide video, show scare
+                videoContainer.style.display = 'none';
+                scareContainer.style.display = 'block';
 
             } else if (newState === "VIDEO") {
                 console.log('📹 Returning to video');
 
-                // Fade out image
-                scareImage.style.opacity = '0';
-
-                setTimeout(() => {
-                    scareImage.style.display = 'none';
-
-                    // Fade in video
-                    video.style.opacity = '1';
-                }, 500);
+                // Switch containers: hide scare, show video
+                scareContainer.style.display = 'none';
+                videoContainer.style.display = 'block';
             }
         }
 
