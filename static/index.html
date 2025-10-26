@@ -42,6 +42,9 @@
         #detectingResizeHandle {
             background: #0000ff;
         }
+        #handsResizeHandle {
+            background: #ff8800;
+        }
         video {
             width: 100%;
             height: 100%;
@@ -197,6 +200,7 @@
             <source src="hands-going-away.mp4" type="video/mp4">
             Your browser does not support the video tag.
         </video>
+        <div class="resize-handle" id="handsResizeHandle"></div>
     </div>
 
     <!-- Detecting Container (snapshot + overlay) -->
@@ -225,6 +229,10 @@
             <button onclick="resetDetectingPosition()">Reset Detecting</button>
         </div>
         <div style="margin-top: 10px;">
+            <button onclick="toggleHandsBorder()">Toggle Hands Border</button>
+            <button onclick="resetHandsPosition()">Reset Hands</button>
+        </div>
+        <div style="margin-top: 10px;">
             <label>
                 <input type="checkbox" id="debugScareMode" onchange="toggleDebugScare()">
                 Debug Scare Mode
@@ -234,6 +242,12 @@
             <label>
                 <input type="checkbox" id="debugDetectingMode" onchange="toggleDebugDetecting()">
                 Debug Detecting Mode
+            </label>
+        </div>
+        <div style="margin-top: 10px;">
+            <label>
+                <input type="checkbox" id="debugHandsMode" onchange="toggleDebugHands()">
+                Debug Hands Mode
             </label>
         </div>
         <div id="audioControls">
@@ -258,6 +272,7 @@
         const videoResizeHandle = document.getElementById('videoResizeHandle');
         const scareResizeHandle = document.getElementById('scareResizeHandle');
         const detectingResizeHandle = document.getElementById('detectingResizeHandle');
+        const handsResizeHandle = document.getElementById('handsResizeHandle');
         const audio = document.getElementById('soundTrack');
         const volumeSlider = document.getElementById('volumeSlider');
         const controls = document.getElementById('controls');
@@ -265,6 +280,7 @@
         const controlToggle = document.getElementById('controlToggle');
         const debugScareCheckbox = document.getElementById('debugScareMode');
         const debugDetectingCheckbox = document.getElementById('debugDetectingMode');
+        const debugHandsCheckbox = document.getElementById('debugHandsMode');
         const video = document.querySelector('video');
         const scareImage = document.getElementById('scareImage');
         const handsVideo = document.getElementById('handsVideo');
@@ -294,6 +310,7 @@
         let videoBorderVisible = false;
         let scareBorderVisible = false;
         let detectingBorderVisible = false;
+        let handsBorderVisible = false;
 
         // Sound state
         let soundPlaying = false;
@@ -347,11 +364,13 @@
                 container.style.left = left + 'px';
                 container.style.top = top + 'px';
 
-                // Save position if it's scare or detecting container
+                // Save position if it's scare, detecting, or hands container
                 if (container === scareContainer) {
                     saveScarePosition();
                 } else if (container === detectingContainer) {
                     saveDetectingPosition();
+                } else if (container === handsContainer) {
+                    saveHandsPosition();
                 }
             } else if (resizeState.active) {
                 const container = resizeState.container;
@@ -375,11 +394,13 @@
                 container.style.width = finalWidth + 'px';
                 container.style.height = finalHeight + 'px';
 
-                // Save size if it's scare or detecting container
+                // Save size if it's scare, detecting, or hands container
                 if (container === scareContainer) {
                     saveScarePosition();
                 } else if (container === detectingContainer) {
                     saveDetectingPosition();
+                } else if (container === handsContainer) {
+                    saveHandsPosition();
                 }
             }
         });
@@ -395,6 +416,7 @@
         setupDragResize(videoContainer, videoResizeHandle);
         setupDragResize(scareContainer, scareResizeHandle);
         setupDragResize(detectingContainer, detectingResizeHandle);
+        setupDragResize(handsContainer, handsResizeHandle);
 
         // =====================================================================
         // BORDER CONTROLS
@@ -415,6 +437,12 @@
             detectingBorderVisible = !detectingBorderVisible;
             detectingContainer.style.border = detectingBorderVisible ? '2px solid blue' : 'none';
             detectingResizeHandle.style.display = detectingBorderVisible ? 'block' : 'none';
+        }
+
+        function toggleHandsBorder() {
+            handsBorderVisible = !handsBorderVisible;
+            handsContainer.style.border = handsBorderVisible ? '2px solid orange' : 'none';
+            handsResizeHandle.style.display = handsBorderVisible ? 'block' : 'none';
         }
 
         // =====================================================================
@@ -441,6 +469,14 @@
             detectingContainer.style.width = '50%';
             detectingContainer.style.height = '50%';
             saveDetectingPosition();
+        }
+
+        function resetHandsPosition() {
+            handsContainer.style.left = '0px';
+            handsContainer.style.top = '0px';
+            handsContainer.style.width = '50%';
+            handsContainer.style.height = '50%';
+            saveHandsPosition();
         }
 
         // =====================================================================
@@ -513,6 +549,31 @@
             }
         }
 
+        function saveHandsPosition() {
+            localStorage.setItem('handsContainer_left', handsContainer.style.left);
+            localStorage.setItem('handsContainer_top', handsContainer.style.top);
+            localStorage.setItem('handsContainer_width', handsContainer.style.width);
+            localStorage.setItem('handsContainer_height', handsContainer.style.height);
+        }
+
+        function loadHandsPosition() {
+            const left = localStorage.getItem('handsContainer_left');
+            const top = localStorage.getItem('handsContainer_top');
+            const width = localStorage.getItem('handsContainer_width');
+            const height = localStorage.getItem('handsContainer_height');
+
+            if (left && top && width && height) {
+                handsContainer.style.left = left;
+                handsContainer.style.top = top;
+                handsContainer.style.width = width;
+                handsContainer.style.height = height;
+                console.log('✅ Restored hands container position from localStorage');
+            } else {
+                // Set defaults
+                resetHandsPosition();
+            }
+        }
+
         // =====================================================================
         // DEBUG MODES
         // =====================================================================
@@ -520,8 +581,9 @@
             if (debugScareCheckbox.checked) {
                 console.log('🧪 Debug Scare Mode enabled - showing test scare image');
 
-                // Disable other debug mode
+                // Disable other debug modes
                 debugDetectingCheckbox.checked = false;
+                debugHandsCheckbox.checked = false;
 
                 // Hide all containers except scare
                 videoContainer.style.display = 'none';
@@ -554,8 +616,9 @@
             if (debugDetectingCheckbox.checked) {
                 console.log('🧪 Debug Detecting Mode enabled - showing detecting screen');
 
-                // Disable other debug mode
+                // Disable other debug modes
                 debugScareCheckbox.checked = false;
+                debugHandsCheckbox.checked = false;
 
                 // Hide all containers except detecting
                 videoContainer.style.display = 'none';
@@ -584,12 +647,57 @@
             }
         }
 
+        function toggleDebugHands() {
+            if (debugHandsCheckbox.checked) {
+                console.log('🧪 Debug Hands Mode enabled - showing hands animation');
+
+                // Disable other debug modes
+                debugScareCheckbox.checked = false;
+                debugDetectingCheckbox.checked = false;
+
+                // Hide all containers except hands
+                videoContainer.style.display = 'none';
+                scareContainer.style.display = 'none';
+                detectingContainer.style.display = 'none';
+                handsContainer.style.display = 'block';
+
+                // Hide other borders if they were visible
+                scareBorderVisible = false;
+                scareContainer.style.border = 'none';
+                scareResizeHandle.style.display = 'none';
+                detectingBorderVisible = false;
+                detectingContainer.style.border = 'none';
+                detectingResizeHandle.style.display = 'none';
+
+                // Automatically show hands border and resize handle for positioning
+                handsBorderVisible = true;
+                handsContainer.style.border = '2px solid orange';
+                handsResizeHandle.style.display = 'block';
+
+                // Restart video from beginning
+                handsVideo.currentTime = 0;
+                handsVideo.play().catch(error => {
+                    console.error('Failed to play hands video:', error);
+                });
+            } else {
+                console.log('📹 Debug Hands Mode disabled - showing video');
+                handsContainer.style.display = 'none';
+                videoContainer.style.display = 'block';
+
+                // Hide hands border and resize handle when exiting debug mode
+                handsBorderVisible = false;
+                handsContainer.style.border = 'none';
+                handsResizeHandle.style.display = 'none';
+            }
+        }
+
         // =====================================================================
         // INITIALIZATION
         // =====================================================================
         resetVideoPosition();
         loadScarePosition();
         loadDetectingPosition();
+        loadHandsPosition();
 
         // =====================================================================
         // SCARE SYSTEM - STATUS POLLING
