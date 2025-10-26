@@ -600,7 +600,7 @@
         // Start polling status.json
         function checkStatus() {
             // Don't poll if in debug mode
-            if (debugModeCheckbox.checked) {
+            if (debugScareCheckbox.checked || debugDetectingCheckbox.checked) {
                 return;
             }
 
