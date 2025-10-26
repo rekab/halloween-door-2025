@@ -387,47 +387,145 @@ def create_placeholder_image(screenshot_pil, image_count, config):
 # SCREEN CAPTURE
 # ============================================================================
 
-def capture_screen(config):
-    """Capture screenshot of specified region or full screen (cross-platform using mss)"""
+def detect_session_type():
+    """
+    Detect if running on Wayland or X11
+    Returns: "wayland", "x11", or "unknown"
+    """
+    # Check XDG_SESSION_TYPE environment variable (most reliable)
+    session_type = os.environ.get('XDG_SESSION_TYPE', '').lower()
+    if session_type in ['wayland', 'x11']:
+        return session_type
+
+    # Fallback: Check if WAYLAND_DISPLAY is set
+    if os.environ.get('WAYLAND_DISPLAY'):
+        return "wayland"
+
+    # Fallback: Check if DISPLAY is set (X11)
+    if os.environ.get('DISPLAY'):
+        return "x11"
+
+    return "unknown"
+
+
+def capture_screen_wayland(config):
+    """
+    Capture screenshot on Wayland using gnome-screenshot
+    Returns: PIL Image or None
+    """
+    import subprocess
+    import tempfile
+
     try:
-        with mss() as sct:
-            region = config.get('capture_region')
-            monitor_num = config.get('screen_number', 0)
+        # Create temporary file for screenshot
+        with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as tmp_file:
+            tmp_path = tmp_file.name
 
-            if region:
-                # Custom region: {"top": y1, "left": x1, "width": w, "height": h}
-                log(f"  Capturing region: {region}", "DEBUG")
+        log(f"  Using Wayland capture via gnome-screenshot", "DEBUG")
 
-                # If region is [x1, y1, x2, y2], convert to mss format
-                if isinstance(region, list) and len(region) == 4:
-                    x1, y1, x2, y2 = region
-                    monitor = {
-                        "top": y1,
-                        "left": x1,
-                        "width": x2 - x1,
-                        "height": y2 - y1
-                    }
-                else:
-                    monitor = region
-            else:
-                # Capture entire monitor (1 = first monitor, 0 = all monitors)
-                monitor_index = monitor_num + 1  # mss uses 1-based indexing for monitors
-                log(f"  Capturing monitor #{monitor_num}", "DEBUG")
-                monitor = sct.monitors[monitor_index]
+        # Run gnome-screenshot to capture to temp file
+        # -f = file path, -p = no effects
+        result = subprocess.run(
+            ['gnome-screenshot', '-f', tmp_path, '-p'],
+            capture_output=True,
+            timeout=5,
+            check=False
+        )
 
-            # Capture screenshot
-            sct_img = sct.grab(monitor)
+        if result.returncode != 0:
+            log(f"gnome-screenshot failed: {result.stderr.decode()}", "ERROR")
+            os.unlink(tmp_path)
+            return None
 
-            # Convert mss image to PIL Image
-            screenshot = Image.frombytes('RGB', sct_img.size, sct_img.rgb)
+        # Load the screenshot with PIL
+        screenshot = Image.open(tmp_path)
 
-            log(f"  Screenshot captured: {screenshot.size[0]}x{screenshot.size[1]}", "DEBUG")
-            return screenshot
+        # Handle region cropping if specified
+        region = config.get('capture_region')
+        if region:
+            if isinstance(region, list) and len(region) == 4:
+                x1, y1, x2, y2 = region
+                screenshot = screenshot.crop((x1, y1, x2, y2))
+                log(f"  Cropped to region: {region}", "DEBUG")
 
+        # Clean up temp file
+        os.unlink(tmp_path)
+
+        log(f"  Screenshot captured: {screenshot.size[0]}x{screenshot.size[1]}", "DEBUG")
+        return screenshot
+
+    except subprocess.TimeoutExpired:
+        log("gnome-screenshot timed out", "ERROR")
+        if os.path.exists(tmp_path):
+            os.unlink(tmp_path)
+        return None
     except Exception as e:
-        log(f"Screenshot failed: {e}", "ERROR")
-        import traceback
-        log(f"  Traceback: {traceback.format_exc()}", "DEBUG")
+        log(f"Wayland screenshot failed: {e}", "ERROR")
+        if 'tmp_path' in locals() and os.path.exists(tmp_path):
+            os.unlink(tmp_path)
+        return None
+
+
+def capture_screen(config):
+    """
+    Capture screenshot of specified region or full screen
+    Supports both X11 (mss) and Wayland (gnome-screenshot)
+    """
+    # Detect session type
+    session = detect_session_type()
+
+    # Route to appropriate capture method
+    if session == "wayland":
+        log(f"  Detected Wayland session", "DEBUG")
+        return capture_screen_wayland(config)
+
+    elif session == "x11":
+        log(f"  Detected X11 session", "DEBUG")
+        # Use mss for X11 (existing code)
+        try:
+            with mss() as sct:
+                region = config.get('capture_region')
+                monitor_num = config.get('screen_number', 0)
+
+                if region:
+                    # Custom region: {"top": y1, "left": x1, "width": w, "height": h}
+                    log(f"  Capturing region: {region}", "DEBUG")
+
+                    # If region is [x1, y1, x2, y2], convert to mss format
+                    if isinstance(region, list) and len(region) == 4:
+                        x1, y1, x2, y2 = region
+                        monitor = {
+                            "top": y1,
+                            "left": x1,
+                            "width": x2 - x1,
+                            "height": y2 - y1
+                        }
+                    else:
+                        monitor = region
+                else:
+                    # Capture entire monitor (1 = first monitor, 0 = all monitors)
+                    monitor_index = monitor_num + 1  # mss uses 1-based indexing for monitors
+                    log(f"  Capturing monitor #{monitor_num}", "DEBUG")
+                    monitor = sct.monitors[monitor_index]
+
+                # Capture screenshot
+                sct_img = sct.grab(monitor)
+
+                # Convert mss image to PIL Image
+                screenshot = Image.frombytes('RGB', sct_img.size, sct_img.rgb)
+
+                log(f"  Screenshot captured: {screenshot.size[0]}x{screenshot.size[1]}", "DEBUG")
+                return screenshot
+
+        except Exception as e:
+            log(f"X11 screenshot failed: {e}", "ERROR")
+            import traceback
+            log(f"  Traceback: {traceback.format_exc()}", "DEBUG")
+            return None
+
+    else:
+        log(f"Unknown session type: {session}", "ERROR")
+        log(f"  Set XDG_SESSION_TYPE environment variable to 'x11' or 'wayland'", "ERROR")
         return None
 
 
@@ -705,6 +803,15 @@ def main():
     log("=" * 80)
     log("")
     log(f"Platform: {log_platform} ({PLATFORM})", "INFO")
+
+    # Detect and log session type
+    session_type = detect_session_type()
+    if session_type == "wayland":
+        log(f"Display server: Wayland (using gnome-screenshot)", "INFO")
+    elif session_type == "x11":
+        log(f"Display server: X11 (using mss)", "INFO")
+    else:
+        log(f"Display server: Unknown ({session_type})", "WARNING")
     log("")
 
     # Load environment variables from .env file

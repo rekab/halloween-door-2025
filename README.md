@@ -51,12 +51,14 @@ halloween-door-2025/
 
 ## ⚙️ Requirements
 
-- **Linux ARM64** (tested), macOS, or Windows (uses mss for cross-platform screen capture)
+- **Linux ARM64** (tested), macOS, or Windows
 - **Python 3.9+**
 - **Google Gemini API key** (free tier works)
 - **Chrome** (for viewing Nest doorbell)
 - **Projector/Chromebook** (for display)
-- **X11 or Wayland display server** (Linux)
+- **Display server** (Linux):
+  - X11: Uses `mss` library (fast)
+  - Wayland: Requires `gnome-screenshot` (see installation below)
 
 ## 🚀 Quick Start (15 Minutes)
 
@@ -65,6 +67,9 @@ halloween-door-2025/
 ```bash
 # Install Python packages
 pip install -r requirements.txt
+
+# If using Wayland (check with: echo $XDG_SESSION_TYPE)
+sudo apt install gnome-screenshot
 ```
 
 ### 2. Get Gemini API Key
@@ -325,12 +330,15 @@ pip install opencv-python
 pip install google-generativeai
 ```
 
-### "Screenshot failed"
+### "Screenshot failed" or "XGetImage() failed"
 
 **Linux:**
-- No special permissions needed for X11
-- For Wayland, may need to run under X11 session
-- Test with: `python3 -c "from mss import mss; print(mss().monitors)"`
+- **Wayland users**: Install gnome-screenshot: `sudo apt install gnome-screenshot`
+- **X11 users**: No special permissions needed
+- Check your session type: `echo $XDG_SESSION_TYPE`
+- The system automatically detects and uses the correct capture method
+- Test X11: `python3 -c "from mss import mss; print(mss().monitors)"`
+- Test Wayland: `gnome-screenshot -f /tmp/test.png`
 
 **macOS:**
 - System Preferences → Security & Privacy → Screen Recording
@@ -338,7 +346,7 @@ pip install google-generativeai
 
 **General:**
 - Check that display server is running
-- Verify mss is installed: `pip show mss`
+- On startup, scare.py logs which capture method it's using
 
 ### "Gemini API error"
 - Check API key in `.env` file
