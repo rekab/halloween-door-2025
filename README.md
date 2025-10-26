@@ -11,7 +11,7 @@ A Python-based Halloween scare system that displays looping creepy hands video o
    - Take screenshot
    - Check if people still present
    - Generate scary ghost image with Nano Banana (~12 seconds)
-   - Display image for 3 seconds
+   - Display image for 10 seconds
    - Repeat until people leave
 5. **Return to Video**: Automatically returns to video when people walk away
 6. **Cooldown**: 5-second pause before next group
@@ -36,7 +36,9 @@ A Python-based Halloween scare system that displays looping creepy hands video o
 halloween-door-2025/
 ├── scare.py              # Main detection + generation loop
 ├── serve.py              # HTTP server
-├── config.json           # All settings
+├── config.json           # System settings
+├── .env                  # Environment variables (API keys)
+├── .env.example          # Template for .env
 ├── requirements.txt      # Dependencies
 ├── README.md             # This file
 ├── static/
@@ -71,19 +73,34 @@ pip install -r requirements.txt
 2. Click "Create API Key"
 3. Copy the key
 
-### 3. Configure System
+### 3. Configure Environment Variables
+
+Create a `.env` file in the project root:
+
+```bash
+cp .env.example .env
+```
+
+Edit `.env` and add your API key:
+
+```env
+# Gemini API Key
+# Get your API key from: https://aistudio.google.com/apikey
+GEMINI_API_KEY=your_actual_api_key_here
+```
+
+### 4. Configure System
 
 Edit `config.json`:
 
 ```json
 {
-  "gemini_api_key": "YOUR_API_KEY_HERE",
   "debug_mode": true,  // Start with true for testing
   ...
 }
 ```
 
-### 4. Test in Debug Mode (Free)
+### 5. Test in Debug Mode (Free)
 
 **Terminal 1 - Start Server:**
 ```bash
@@ -103,13 +120,13 @@ In Terminal 2, press `t` to trigger a manual scare
 
 ✅ You should see placeholder images appear (fast, free testing)
 
-### 5. Configure Projector
+### 6. Configure Projector
 
 1. Adjust video position using on-screen controls
 2. Use "Show Controls" checkbox to hide controls
 3. Position viewport perfectly on your door
 
-### 6. Switch to Production Mode
+### 7. Switch to Production Mode
 
 Edit `config.json`:
 
@@ -136,14 +153,12 @@ While `scare.py` is running:
 
 ```json
 {
-  "gemini_api_key": "",          // Your Gemini API key
+  "debug_mode": false,           // true = free placeholders, false = real AI
 
-  "debug_mode": true,            // true = free placeholders, false = real AI
-
-  "motion_check_interval": 2,    // Seconds between motion checks
+  "motion_check_interval": 1,    // Seconds between motion checks
   "motion_threshold": 5000,      // Pixels changed to trigger motion
 
-  "scare_loop_interval": 3,      // Seconds between images during scare
+  "scare_loop_interval": 10,     // Seconds between images during scare
   "max_images_per_group": 10,    // Safety limit per group
 
   "cooldown_duration": 5,        // Seconds before next group
@@ -156,13 +171,34 @@ While `scare.py` is running:
 }
 ```
 
+**Note:** API key is stored in `.env` file, not in config.json
+
+### .env File
+
+The `.env` file contains sensitive environment variables and should **never** be committed to git.
+
+**Required Variables:**
+```env
+# Gemini API Key (required for AI generation)
+# Get from: https://aistudio.google.com/apikey
+GEMINI_API_KEY=your_actual_api_key_here
+```
+
+**Setup:**
+1. Copy `.env.example` to `.env`
+2. Add your actual API key
+3. The `.env` file is already in `.gitignore` for security
+
+**Note:** The system uses `python-dotenv` to load these variables automatically when `scare.py` runs.
+
 ### Recommended Settings
 
 **For Testing:**
 ```json
 {
   "debug_mode": true,
-  "scare_loop_interval": 2,
+  "motion_check_interval": 2,
+  "scare_loop_interval": 5,
   "max_images_per_group": 3
 }
 ```
@@ -171,7 +207,8 @@ While `scare.py` is running:
 ```json
 {
   "debug_mode": false,
-  "scare_loop_interval": 3,
+  "motion_check_interval": 1,
+  "scare_loop_interval": 10,
   "max_images_per_group": 10
 }
 ```
@@ -262,7 +299,7 @@ python3 -c "from mss import mss; import pprint; pprint.pprint(mss().monitors)"
 
 ### Phase 4: Production Test
 - [ ] `config.json` has `debug_mode: false`
-- [ ] Add Gemini API key
+- [ ] `.env` file has valid `GEMINI_API_KEY`
 - [ ] Proximity check works (logs show "YES" or "NO")
 - [ ] AI images generate (~12 seconds)
 - [ ] Images are actually scary
@@ -304,8 +341,9 @@ pip install google-generativeai
 - Verify mss is installed: `pip show mss`
 
 ### "Gemini API error"
-- Check API key in `config.json`
+- Check API key in `.env` file
 - Verify key is active at https://aistudio.google.com/apikey
+- Ensure `.env` file exists in project root
 - Check internet connection
 
 ### Video doesn't loop
@@ -365,7 +403,8 @@ The system produces **detailed, colorful logs**:
 
 - Server runs on local network only
 - No external access (unless you port forward)
-- API key stored in local config.json
+- API key stored in `.env` file (not committed to git)
+- `.env` file is excluded via `.gitignore`
 - Generated images saved locally
 
 ## 📜 License
