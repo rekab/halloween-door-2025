@@ -172,10 +172,100 @@ def generate_scary_image_gemini(screenshot_pil, config):
 
         # Randomly select a scary character prompt
         prompts = [
-            "Using the provided image of people, add a terrifying set of zombies creeping up BEHIND the people at the door. Only add zombies behind the people, do not modify anything else",
-            "Using the provided image of people, add a grim reaper with a dark hooded cloak creeping menacingly BEHIND the people. Only add a grim reaper, do not modify anything else.",
-            "Using the provided image of people, add a creepy pale ghost with long black hair and a white dress creeping BEHIND the people. Only add a ghost, do not modify anything else.",
-            "Using the provided image of people, add a scary demonic figure with glowing red eyes creeping BEHIND the people. Only add a demon, do not modify anything else.",
+            # Zombie
+            "This is a black and white night vision doorbell camera image showing people "
+            "at a front door. Using a wide-angle perspective matching the doorbell camera "
+            "view, add a terrifying group of 2-3 zombies in the dark background space "
+            "BEHIND the people. "
+            ""
+            "The zombies should have: decayed flesh with visible bone structure, tattered "
+            "and torn clothing hanging in strips, sunken eye sockets with milky white "
+            "eyes, mouths hanging open revealing broken teeth, reaching forward with "
+            "skeletal hands and grasping fingers, hunched postures as if lurching forward. "
+            ""
+            "The zombies must appear in the BACKGROUND ONLY - in the dark space behind "
+            "where the people are standing. They should be partially obscured by shadows "
+            "and darkness, creating an ominous \"emerging from the darkness\" effect. "
+            ""
+            "Keep the people in the foreground COMPLETELY UNCHANGED - do not modify their "
+            "appearance, clothing, position, or lighting. Only add the zombies to the "
+            "empty background space. Maintain the grainy, high-contrast black and white "
+            "night vision aesthetic of the original doorbell camera footage.",
+
+            # Grim Reaper
+            "This is a black and white night vision doorbell camera image showing people "
+            "at a front door. Using a low-angle perspective that makes the figure more "
+            "imposing, add a single grim reaper looming in the dark background space "
+            "BEHIND the people. "
+            ""
+            "The grim reaper should have: a tall, towering presence (7-8 feet tall), "
+            "flowing tattered black hooded cloak with deep shadows concealing the face, "
+            "skeletal hands with long bony fingers emerging from the sleeves, holding a "
+            "large scythe with a curved blade that catches slight moonlight, the figure "
+            "standing perfectly still in a menacing pose with the hood tilted slightly "
+            "downward as if watching the people. "
+            ""
+            "Position the reaper in the BACKGROUND ONLY - standing in the shadows several "
+            "feet behind where the people are positioned. The figure should be partially "
+            "shrouded in darkness with only certain details (bone hands, scythe blade, "
+            "edge of hood) catching ambient light for dramatic effect. "
+            ""
+            "Keep the people in the foreground COMPLETELY UNCHANGED - preserve their "
+            "exact appearance, positions, and lighting. Only add the grim reaper to the "
+            "empty dark space behind them. Maintain the grainy, high-contrast black and "
+            "white night vision camera quality.",
+
+            # Ghost
+            "This is a black and white night vision doorbell camera image showing people "
+            "at a front door. Using the same fixed camera perspective as the doorbell, "
+            "add a creepy female ghost figure in the dark background space BEHIND the "
+            "people. "
+            ""
+            "The ghost should have: long, stringy black hair hanging down to conceal "
+            "most of the face, pale white skin with an almost translucent quality, "
+            "wearing a tattered white dress or nightgown that appears to float slightly, "
+            "thin skeletal arms hanging at her sides, head tilted at an unnatural angle, "
+            "one eye barely visible through the hair showing a hollow, dead stare, slight "
+            "ethereal glow around the edges of the figure creating an otherworldly "
+            "presence. "
+            ""
+            "Place the ghost in the BACKGROUND ONLY - standing motionless in the darkness "
+            "3-4 feet behind where the people are positioned. The figure should emerge "
+            "from the shadows with the pale dress and skin contrasting dramatically "
+            "against the dark background, creating a chilling \"she wasn't there a moment "
+            "ago\" effect. "
+            ""
+            "Keep the people in the foreground COMPLETELY UNCHANGED - do not alter their "
+            "appearance, positions, clothing, or lighting in any way. Only add the ghost "
+            "to the empty background area. Maintain the grainy black and white night "
+            "vision doorbell camera aesthetic.",
+
+            # Demon
+            "This is a black and white night vision doorbell camera image showing people "
+            "at a front door. Using a slightly low-angle perspective to make the figure "
+            "more threatening, add a terrifying demonic figure in the dark background "
+            "space BEHIND the people. "
+            ""
+            "The demon should have: a hulking muscular build standing 6-7 feet tall, "
+            "rough textured skin with shadowy details, two glowing red eyes that pierce "
+            "through the darkness (the ONLY source of color in the image), pronounced "
+            "facial features with a wide jaw and sharp angular cheekbones, twisted "
+            "horns emerging from the skull, hunched predatory posture with shoulders "
+            "forward, long clawed fingers on both hands, appearing to emerge from deep "
+            "shadows with smoke or mist wisping around the lower body. "
+            ""
+            "Position the demon in the BACKGROUND ONLY - lurking in the darkest area "
+            "several feet behind where the people stand. The figure should be mostly "
+            "shrouded in shadow with only the glowing red eyes, occasional highlights on "
+            "the horns, and hints of the muscular form visible. The eyes should appear "
+            "to be staring directly at the people, creating a \"predator watching prey\" "
+            "feeling. "
+            ""
+            "Keep the people in the foreground COMPLETELY UNCHANGED - preserve every "
+            "detail of their appearance, positions, and lighting exactly as captured. "
+            "Only add the demon to the empty dark background space. Maintain the grainy, "
+            "high-contrast black and white night vision camera quality, with ONLY the "
+            "demon's eyes providing red color.",
         ]
         prompt = random.choice(prompts)
 
