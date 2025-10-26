@@ -173,24 +173,20 @@ def generate_scary_image_gemini(screenshot_pil, config):
         # Randomly select a scary character prompt
         prompts = [
             # Zombie
-            "This is a black and white night vision doorbell camera image showing people "
-            "at a front door. Using a wide-angle perspective matching the doorbell camera "
-            "view, add a terrifying group of 2-3 zombies in the dark background space "
-            "BEHIND the people. "
+            "This is a black and white doorbell camera image showing people at a front "
+            "door. Add 2-3 friendly Halloween zombies in the background space behind the "
+            "people, as if they're trick-or-treating too. "
             ""
-            "The zombies should have: decayed flesh with visible bone structure, tattered "
-            "and torn clothing hanging in strips, sunken eye sockets with milky white "
-            "eyes, mouths hanging open revealing broken teeth, reaching forward with "
-            "skeletal hands and grasping fingers, hunched postures as if lurching forward. "
+            "The zombies should have: pale makeup, disheveled hair, worn vintage clothing, "
+            "sleepy expressions with half-closed eyes, slow shuffling poses with arms "
+            "slightly extended forward in a classic zombie stance. "
             ""
-            "The zombies must appear in the BACKGROUND ONLY - in the dark space behind "
-            "where the people are standing. They should be partially obscured by shadows "
-            "and darkness, creating an ominous \"emerging from the darkness\" effect. "
+            "Place the zombies in the dark background area, several feet behind where the "
+            "people are standing. They should be partially visible in the shadows. "
             ""
-            "Keep the people in the foreground COMPLETELY UNCHANGED - do not modify their "
-            "appearance, clothing, position, or lighting. Only add the zombies to the "
-            "empty background space. Maintain the grainy, high-contrast black and white "
-            "night vision aesthetic of the original doorbell camera footage.",
+            "Keep the people in the foreground completely unchanged. Only add the costumed "
+            "zombies to the empty background space. Maintain the grainy black and white "
+            "night vision camera quality.",
 
             # Grim Reaper
             "This is a black and white night vision doorbell camera image showing people "
@@ -241,31 +237,21 @@ def generate_scary_image_gemini(screenshot_pil, config):
             "vision doorbell camera aesthetic.",
 
             # Demon
-            "This is a black and white night vision doorbell camera image showing people "
-            "at a front door. Using a slightly low-angle perspective to make the figure "
-            "more threatening, add a terrifying demonic figure in the dark background "
-            "space BEHIND the people. "
+            "This is a black and white doorbell camera image showing people at a front "
+            "door. Add a figure in a demon costume in the background space behind the "
+            "people, as if attending a Halloween party. "
             ""
-            "The demon should have: a hulking muscular build standing 6-7 feet tall, "
-            "rough textured skin with shadowy details, two glowing red eyes that pierce "
-            "through the darkness (the ONLY source of color in the image), pronounced "
-            "facial features with a wide jaw and sharp angular cheekbones, twisted "
-            "horns emerging from the skull, hunched predatory posture with shoulders "
-            "forward, long clawed fingers on both hands, appearing to emerge from deep "
-            "shadows with smoke or mist wisping around the lower body. "
+            "The costumed figure should have: theatrical face paint or mask with horns, "
+            "a dark dramatic outfit, standing in a theatrical pose with arms slightly "
+            "raised, appearing mysterious and spooky but not threatening. "
             ""
-            "Position the demon in the BACKGROUND ONLY - lurking in the darkest area "
-            "several feet behind where the people stand. The figure should be mostly "
-            "shrouded in shadow with only the glowing red eyes, occasional highlights on "
-            "the horns, and hints of the muscular form visible. The eyes should appear "
-            "to be staring directly at the people, creating a \"predator watching prey\" "
-            "feeling. "
+            "Position the figure in the background only, in the shadowy area several "
+            "feet behind where the people stand. Most of the costume should blend with "
+            "the darkness with just hints of the form visible. "
             ""
-            "Keep the people in the foreground COMPLETELY UNCHANGED - preserve every "
-            "detail of their appearance, positions, and lighting exactly as captured. "
-            "Only add the demon to the empty dark background space. Maintain the grainy, "
-            "high-contrast black and white night vision camera quality, with ONLY the "
-            "demon's eyes providing red color.",
+            "Keep the people in the foreground completely unchanged. Only add the "
+            "costumed figure to the empty background space. Maintain the black and "
+            "white night vision camera quality.",
         ]
         prompt = random.choice(prompts)
 
@@ -584,6 +570,14 @@ def trigger_scare_sequence(initial_screenshot, config, gemini_enabled):
     while image_count < max_images:
         log(f"\n--- Scare Loop Iteration #{image_count + 1} ---", "SCARE")
 
+        # STAGE 1: HANDS ANIMATION (only on first iteration)
+        if image_count == 0:
+            hands_duration = config.get('hands_animation_duration', 3)
+            log("👋 STAGE 1: Playing hands-going-away animation...", "SCARE")
+            update_status("HANDS_ANIMATION", None, config)
+            log(f"⏳ Waiting {hands_duration}s for animation...", "DEBUG")
+            time.sleep(hands_duration)
+
         # Capture fresh screenshot
         log("📸 Capturing fresh screenshot...", "DEBUG")
         screenshot = capture_screen(config)
@@ -605,7 +599,22 @@ def trigger_scare_sequence(initial_screenshot, config, gemini_enabled):
             else:
                 log("  Skipping proximity check (debug mode or no API)", "DEBUG")
 
-        # Generate image
+        # STAGE 2: DETECTING - Save snapshot and show "Evil Spirit Detector" overlay
+        log("🔍 STAGE 2: Showing detecting screen...", "SCARE")
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        snapshot_filename = f"detecting_snapshot_{timestamp}.png"
+        snapshot_path = save_image(screenshot, snapshot_filename, config)
+
+        if snapshot_path is None:
+            log("Failed to save snapshot, exiting scare loop", "ERROR")
+            break
+
+        snapshot_relative = f"generated/{snapshot_filename}"
+        update_status("DETECTING", snapshot_relative, config)
+        log("📷 Snapshot saved and detecting screen displayed", "DEBUG")
+
+        # STAGE 3: Generate image (while DETECTING screen is showing)
+        log("🎨 STAGE 3: Generating scary image (in background)...", "SCARE")
         if debug_mode:
             log("🧪 TEST MODE: Creating placeholder image", "SCARE")
             scary_image = create_placeholder_image(screenshot, image_count, config)
@@ -621,18 +630,16 @@ def trigger_scare_sequence(initial_screenshot, config, gemini_enabled):
             log("Image generation failed, exiting scare loop", "ERROR")
             break
 
-        # Save image
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        filename = f"scare_{timestamp}_{image_count:02d}.png"
-
-        saved_path = save_image(scary_image, filename, config)
+        # Save generated image
+        scare_filename = f"scare_{timestamp}_{image_count:02d}.png"
+        saved_path = save_image(scary_image, scare_filename, config)
 
         if saved_path is None:
             log("Failed to save image, exiting scare loop", "ERROR")
             break
 
-        # Update status to show this image
-        relative_path = f"generated/{filename}"
+        # Update status to show generated image
+        relative_path = f"generated/{scare_filename}"
         update_status("IMAGE", relative_path, config)
 
         log(f"✅ Scare image #{image_count + 1} displayed!", "SCARE")

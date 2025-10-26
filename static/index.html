@@ -39,6 +39,9 @@
         #scareResizeHandle {
             background: #ff0000;
         }
+        #detectingResizeHandle {
+            background: #0000ff;
+        }
         video {
             width: 100%;
             height: 100%;
@@ -95,6 +98,75 @@
         .control-toggle-label input {
             margin-right: 5px;
         }
+        #handsContainer {
+            display: none;
+        }
+        #detectingContainer {
+            display: none;
+        }
+        #detectingImage {
+            position: absolute;
+            right: 0;
+            top: 50%;
+            transform: translateY(-50%) scaleX(-1);
+            height: 100%;
+            width: auto;
+            pointer-events: none;
+            user-select: none;
+            -webkit-user-drag: none;
+        }
+        #detectorOverlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            pointer-events: none;
+            z-index: 10;
+            transform: rotate(90deg);
+            transform-origin: center;
+        }
+        .detector-text {
+            font-family: 'Courier New', monospace;
+            font-size: 48px;
+            font-weight: bold;
+            color: #00ff00;
+            text-shadow: 0 0 20px #00ff00, 0 0 40px #00ff00;
+            letter-spacing: 8px;
+            line-height: 1.2;
+            text-align: right;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+        .scanning-line {
+            position: absolute;
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, #00ff00, transparent);
+            box-shadow: 0 0 10px #00ff00;
+            animation: scan 2s linear infinite;
+        }
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+            50% {
+                opacity: 0.7;
+                transform: scale(1.05);
+            }
+        }
+        @keyframes scan {
+            0% {
+                top: 0%;
+            }
+            100% {
+                top: 100%;
+            }
+        }
     </style>
 </head>
 <body>
@@ -119,6 +191,26 @@
         <div class="resize-handle" id="scareResizeHandle"></div>
     </div>
 
+    <!-- Hands Animation Container -->
+    <div id="handsContainer" class="viewport-container">
+        <video id="handsVideo" autoplay playsinline draggable="false">
+            <source src="hands-going-away.mp4" type="video/mp4">
+            Your browser does not support the video tag.
+        </video>
+    </div>
+
+    <!-- Detecting Container (snapshot + overlay) -->
+    <div id="detectingContainer" class="viewport-container">
+        <div class="image-wrapper">
+            <img id="detectingImage" src="test_scare.png" alt="Detecting" draggable="false">
+        </div>
+        <div id="detectorOverlay">
+            <div class="detector-text">EVIL<br>SPIRIT<br>DETECTOR</div>
+            <div class="scanning-line"></div>
+        </div>
+        <div class="resize-handle" id="detectingResizeHandle"></div>
+    </div>
+
     <div id="controls">
         <div>
             <button onclick="toggleVideoBorder()">Toggle Video Border</button>
@@ -129,9 +221,19 @@
             <button onclick="resetScarePosition()">Reset Scare</button>
         </div>
         <div style="margin-top: 10px;">
+            <button onclick="toggleDetectingBorder()">Toggle Detecting Border</button>
+            <button onclick="resetDetectingPosition()">Reset Detecting</button>
+        </div>
+        <div style="margin-top: 10px;">
             <label>
-                <input type="checkbox" id="debugMode" onchange="toggleDebugMode()">
-                Debug Mode (Show Test Scare)
+                <input type="checkbox" id="debugScareMode" onchange="toggleDebugScare()">
+                Debug Scare Mode
+            </label>
+        </div>
+        <div style="margin-top: 10px;">
+            <label>
+                <input type="checkbox" id="debugDetectingMode" onchange="toggleDebugDetecting()">
+                Debug Detecting Mode
             </label>
         </div>
         <div id="audioControls">
@@ -151,16 +253,22 @@
         // =====================================================================
         const videoContainer = document.getElementById('videoContainer');
         const scareContainer = document.getElementById('scareContainer');
+        const handsContainer = document.getElementById('handsContainer');
+        const detectingContainer = document.getElementById('detectingContainer');
         const videoResizeHandle = document.getElementById('videoResizeHandle');
         const scareResizeHandle = document.getElementById('scareResizeHandle');
+        const detectingResizeHandle = document.getElementById('detectingResizeHandle');
         const audio = document.getElementById('soundTrack');
         const volumeSlider = document.getElementById('volumeSlider');
         const controls = document.getElementById('controls');
         const showControlsCheckbox = document.getElementById('showControls');
         const controlToggle = document.getElementById('controlToggle');
-        const debugModeCheckbox = document.getElementById('debugMode');
+        const debugScareCheckbox = document.getElementById('debugScareMode');
+        const debugDetectingCheckbox = document.getElementById('debugDetectingMode');
         const video = document.querySelector('video');
         const scareImage = document.getElementById('scareImage');
+        const handsVideo = document.getElementById('handsVideo');
+        const detectingImage = document.getElementById('detectingImage');
 
         // =====================================================================
         // DRAG/RESIZE STATE
@@ -185,6 +293,7 @@
         // Border visibility
         let videoBorderVisible = false;
         let scareBorderVisible = false;
+        let detectingBorderVisible = false;
 
         // Sound state
         let soundPlaying = false;
@@ -234,9 +343,11 @@
                 container.style.left = left + 'px';
                 container.style.top = top + 'px';
 
-                // Save position if it's scare container
+                // Save position if it's scare or detecting container
                 if (container === scareContainer) {
                     saveScarePosition();
+                } else if (container === detectingContainer) {
+                    saveDetectingPosition();
                 }
             } else if (resizeState.active) {
                 const container = resizeState.container;
@@ -260,9 +371,11 @@
                 container.style.width = finalWidth + 'px';
                 container.style.height = finalHeight + 'px';
 
-                // Save size if it's scare container
+                // Save size if it's scare or detecting container
                 if (container === scareContainer) {
                     saveScarePosition();
+                } else if (container === detectingContainer) {
+                    saveDetectingPosition();
                 }
             }
         });
@@ -274,9 +387,10 @@
             resizeState.container = null;
         });
 
-        // Setup both containers
+        // Setup all containers
         setupDragResize(videoContainer, videoResizeHandle);
         setupDragResize(scareContainer, scareResizeHandle);
+        setupDragResize(detectingContainer, detectingResizeHandle);
 
         // =====================================================================
         // BORDER CONTROLS
@@ -291,6 +405,12 @@
             scareBorderVisible = !scareBorderVisible;
             scareContainer.style.border = scareBorderVisible ? '2px solid red' : 'none';
             scareResizeHandle.style.display = scareBorderVisible ? 'block' : 'none';
+        }
+
+        function toggleDetectingBorder() {
+            detectingBorderVisible = !detectingBorderVisible;
+            detectingContainer.style.border = detectingBorderVisible ? '2px solid blue' : 'none';
+            detectingResizeHandle.style.display = detectingBorderVisible ? 'block' : 'none';
         }
 
         // =====================================================================
@@ -311,6 +431,14 @@
             saveScarePosition();
         }
 
+        function resetDetectingPosition() {
+            detectingContainer.style.left = '0px';
+            detectingContainer.style.top = '0px';
+            detectingContainer.style.width = '50%';
+            detectingContainer.style.height = '50%';
+            saveDetectingPosition();
+        }
+
         // =====================================================================
         // AUDIO CONTROLS
         // =====================================================================
@@ -329,7 +457,7 @@
         }
 
         // =====================================================================
-        // LOCALSTORAGE PERSISTENCE (Scare Container Only)
+        // LOCALSTORAGE PERSISTENCE
         // =====================================================================
         function saveScarePosition() {
             localStorage.setItem('scareContainer_left', scareContainer.style.left);
@@ -356,21 +484,58 @@
             }
         }
 
+        function saveDetectingPosition() {
+            localStorage.setItem('detectingContainer_left', detectingContainer.style.left);
+            localStorage.setItem('detectingContainer_top', detectingContainer.style.top);
+            localStorage.setItem('detectingContainer_width', detectingContainer.style.width);
+            localStorage.setItem('detectingContainer_height', detectingContainer.style.height);
+        }
+
+        function loadDetectingPosition() {
+            const left = localStorage.getItem('detectingContainer_left');
+            const top = localStorage.getItem('detectingContainer_top');
+            const width = localStorage.getItem('detectingContainer_width');
+            const height = localStorage.getItem('detectingContainer_height');
+
+            if (left && top && width && height) {
+                detectingContainer.style.left = left;
+                detectingContainer.style.top = top;
+                detectingContainer.style.width = width;
+                detectingContainer.style.height = height;
+                console.log('✅ Restored detecting container position from localStorage');
+            } else {
+                // Set defaults
+                resetDetectingPosition();
+            }
+        }
+
         // =====================================================================
-        // DEBUG MODE
+        // DEBUG MODES
         // =====================================================================
-        function toggleDebugMode() {
-            if (debugModeCheckbox.checked) {
-                console.log('🧪 Debug mode enabled - showing test scare image');
+        function toggleDebugScare() {
+            if (debugScareCheckbox.checked) {
+                console.log('🧪 Debug Scare Mode enabled - showing test scare image');
+
+                // Disable other debug mode
+                debugDetectingCheckbox.checked = false;
+
+                // Hide all containers except scare
                 videoContainer.style.display = 'none';
+                handsContainer.style.display = 'none';
+                detectingContainer.style.display = 'none';
                 scareContainer.style.display = 'block';
+
+                // Hide detecting border if it was visible
+                detectingBorderVisible = false;
+                detectingContainer.style.border = 'none';
+                detectingResizeHandle.style.display = 'none';
 
                 // Automatically show scare border and resize handle for positioning
                 scareBorderVisible = true;
                 scareContainer.style.border = '2px solid red';
                 scareResizeHandle.style.display = 'block';
             } else {
-                console.log('📹 Debug mode disabled - showing video');
+                console.log('📹 Debug Scare Mode disabled - showing video');
                 scareContainer.style.display = 'none';
                 videoContainer.style.display = 'block';
 
@@ -381,11 +546,46 @@
             }
         }
 
+        function toggleDebugDetecting() {
+            if (debugDetectingCheckbox.checked) {
+                console.log('🧪 Debug Detecting Mode enabled - showing detecting screen');
+
+                // Disable other debug mode
+                debugScareCheckbox.checked = false;
+
+                // Hide all containers except detecting
+                videoContainer.style.display = 'none';
+                handsContainer.style.display = 'none';
+                scareContainer.style.display = 'none';
+                detectingContainer.style.display = 'block';
+
+                // Hide scare border if it was visible
+                scareBorderVisible = false;
+                scareContainer.style.border = 'none';
+                scareResizeHandle.style.display = 'none';
+
+                // Automatically show detecting border and resize handle for positioning
+                detectingBorderVisible = true;
+                detectingContainer.style.border = '2px solid blue';
+                detectingResizeHandle.style.display = 'block';
+            } else {
+                console.log('📹 Debug Detecting Mode disabled - showing video');
+                detectingContainer.style.display = 'none';
+                videoContainer.style.display = 'block';
+
+                // Hide detecting border and resize handle when exiting debug mode
+                detectingBorderVisible = false;
+                detectingContainer.style.border = 'none';
+                detectingResizeHandle.style.display = 'none';
+            }
+        }
+
         // =====================================================================
         // INITIALIZATION
         // =====================================================================
         resetVideoPosition();
         loadScarePosition();
+        loadDetectingPosition();
 
         // =====================================================================
         // SCARE SYSTEM - STATUS POLLING
@@ -434,22 +634,34 @@
         }
 
         function switchState(newState, imageUrl) {
-            if (newState === "IMAGE" && imageUrl) {
-                console.log(`👻 SCARE! Showing image: ${imageUrl}`);
+            // Hide all containers first
+            videoContainer.style.display = 'none';
+            scareContainer.style.display = 'none';
+            handsContainer.style.display = 'none';
+            detectingContainer.style.display = 'none';
 
+            if (newState === "VIDEO") {
+                console.log('📹 Returning to video');
+                videoContainer.style.display = 'block';
+
+            } else if (newState === "HANDS_ANIMATION") {
+                console.log('👋 Playing hands animation');
+                handsContainer.style.display = 'block';
+                // Restart video from beginning
+                handsVideo.currentTime = 0;
+                handsVideo.play();
+
+            } else if (newState === "DETECTING" && imageUrl) {
+                console.log(`🔍 DETECTING! Showing snapshot: ${imageUrl}`);
+                // Load snapshot with cache-busting
+                detectingImage.src = imageUrl + `?t=${Date.now()}`;
+                detectingContainer.style.display = 'block';
+
+            } else if (newState === "IMAGE" && imageUrl) {
+                console.log(`👻 SCARE! Showing image: ${imageUrl}`);
                 // Load generated image with cache-busting
                 scareImage.src = imageUrl + `?t=${Date.now()}`;
-
-                // Switch containers: hide video, show scare
-                videoContainer.style.display = 'none';
                 scareContainer.style.display = 'block';
-
-            } else if (newState === "VIDEO") {
-                console.log('📹 Returning to video');
-
-                // Switch containers: hide scare, show video
-                scareContainer.style.display = 'none';
-                videoContainer.style.display = 'block';
             }
         }
 
