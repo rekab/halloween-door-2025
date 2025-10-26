@@ -132,7 +132,6 @@ def check_proximity_gemini(screenshot_pil, config):
         model = genai_vision.GenerativeModel('gemini-2.0-flash-exp')
 
         prompt = (
-            "Black and white night vision doorbell camera image. "
             "Are there people visible within 3 feet of the camera AND facing toward the camera? "
             "Answer ONLY: YES or NO"
         )
@@ -174,25 +173,26 @@ def generate_scary_image_gemini(screenshot_pil, config):
         prompts = [
             # Zombie
             "This is a black and white doorbell camera image showing people at a front "
-            "door. Add 2-3 friendly Halloween zombies in the background space behind the "
+            "door. Add 2-3 friendly Halloween zombies positioned directly behind the "
             "people, as if they're trick-or-treating too. "
             ""
             "The zombies should have: pale makeup, disheveled hair, worn vintage clothing, "
             "sleepy expressions with half-closed eyes, slow shuffling poses with arms "
             "slightly extended forward in a classic zombie stance. "
             ""
-            "Place the zombies in the dark background area, several feet behind where the "
-            "people are standing. They should be partially visible in the shadows. "
+            "Position the zombies directly behind the people - close enough that they "
+            "appear to be standing right behind them, not far in the distance. The zombies "
+            "should be clearly visible and prominent in the image, emerging from the shadows "
+            "immediately behind where the people stand. "
             ""
             "Keep the people in the foreground completely unchanged. Only add the costumed "
-            "zombies to the empty background space. Maintain the grainy black and white "
-            "night vision camera quality.",
+            "zombies directly behind them. Maintain the grainy black and white night vision "
+            "camera quality.",
 
             # Grim Reaper
             "This is a black and white night vision doorbell camera image showing people "
             "at a front door. Using a low-angle perspective that makes the figure more "
-            "imposing, add a single grim reaper looming in the dark background space "
-            "BEHIND the people. "
+            "imposing, add a single grim reaper looming directly behind the people. "
             ""
             "The grim reaper should have: a tall, towering presence (7-8 feet tall), "
             "flowing tattered black hooded cloak with deep shadows concealing the face, "
@@ -201,21 +201,21 @@ def generate_scary_image_gemini(screenshot_pil, config):
             "standing perfectly still in a menacing pose with the hood tilted slightly "
             "downward as if watching the people. "
             ""
-            "Position the reaper in the BACKGROUND ONLY - standing in the shadows several "
-            "feet behind where the people are positioned. The figure should be partially "
-            "shrouded in darkness with only certain details (bone hands, scythe blade, "
-            "edge of hood) catching ambient light for dramatic effect. "
+            "Position the reaper directly behind the people - close enough to appear as if "
+            "it's standing right behind them, towering over them. The figure should be "
+            "clearly visible and prominent, with details like the skeletal hands, scythe "
+            "blade, and hooded silhouette clearly visible in the darkness immediately behind "
+            "the people. "
             ""
             "Keep the people in the foreground COMPLETELY UNCHANGED - preserve their "
-            "exact appearance, positions, and lighting. Only add the grim reaper to the "
-            "empty dark space behind them. Maintain the grainy, high-contrast black and "
-            "white night vision camera quality.",
+            "exact appearance, positions, and lighting. Only add the grim reaper directly "
+            "behind them. Maintain the grainy, high-contrast black and white night vision "
+            "camera quality.",
 
             # Ghost
             "This is a black and white night vision doorbell camera image showing people "
             "at a front door. Using the same fixed camera perspective as the doorbell, "
-            "add a creepy female ghost figure in the dark background space BEHIND the "
-            "people. "
+            "add a creepy female ghost figure positioned directly behind the people. "
             ""
             "The ghost should have: long, stringy black hair hanging down to conceal "
             "most of the face, pale white skin with an almost translucent quality, "
@@ -225,33 +225,35 @@ def generate_scary_image_gemini(screenshot_pil, config):
             "ethereal glow around the edges of the figure creating an otherworldly "
             "presence. "
             ""
-            "Place the ghost in the BACKGROUND ONLY - standing motionless in the darkness "
-            "3-4 feet behind where the people are positioned. The figure should emerge "
-            "from the shadows with the pale dress and skin contrasting dramatically "
-            "against the dark background, creating a chilling \"she wasn't there a moment "
-            "ago\" effect. "
+            "Position the ghost directly behind the people - close enough that she appears "
+            "to be standing right behind them, not far in the distance. The figure should "
+            "be prominent and clearly visible, emerging from the darkness immediately behind "
+            "where the people stand. The pale dress and skin should contrast dramatically "
+            "against the dark background, creating a chilling \"she's right behind them\" "
+            "effect. "
             ""
             "Keep the people in the foreground COMPLETELY UNCHANGED - do not alter their "
             "appearance, positions, clothing, or lighting in any way. Only add the ghost "
-            "to the empty background area. Maintain the grainy black and white night "
-            "vision doorbell camera aesthetic.",
+            "directly behind them. Maintain the grainy black and white night vision doorbell "
+            "camera aesthetic.",
 
             # Demon
             "This is a black and white doorbell camera image showing people at a front "
-            "door. Add a figure in a demon costume in the background space behind the "
-            "people, as if attending a Halloween party. "
+            "door. Add a figure in a demon costume positioned directly behind the people, "
+            "as if attending a Halloween party. "
             ""
             "The costumed figure should have: theatrical face paint or mask with horns, "
             "a dark dramatic outfit, standing in a theatrical pose with arms slightly "
             "raised, appearing mysterious and spooky but not threatening. "
             ""
-            "Position the figure in the background only, in the shadowy area several "
-            "feet behind where the people stand. Most of the costume should blend with "
-            "the darkness with just hints of the form visible. "
+            "Position the figure directly behind the people - close enough to appear as if "
+            "standing right behind them. The costumed figure should be clearly visible and "
+            "prominent, with details of the horns and costume visible in the darkness "
+            "immediately behind where the people stand. "
             ""
             "Keep the people in the foreground completely unchanged. Only add the "
-            "costumed figure to the empty background space. Maintain the black and "
-            "white night vision camera quality.",
+            "costumed figure directly behind them. Maintain the black and white night "
+            "vision camera quality.",
         ]
         prompt = random.choice(prompts)
 
