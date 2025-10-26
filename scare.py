@@ -172,10 +172,10 @@ def generate_scary_image_gemini(screenshot_pil, config):
 
         # Randomly select a scary character prompt
         prompts = [
-            "Add a terrifying ghostly figure with hollow eyes standing BEHIND the people at the door, horror movie style, dark shadows, eerie atmosphere",
-            "Add a grim reaper with a dark hooded cloak looming menacingly BEHIND the people, pale skeletal face visible, supernatural horror",
-            "Add a creepy pale ghost with long black hair and a white dress lurking BEHIND the people, horror movie aesthetic, unsettling presence",
-            "Add a scary demonic figure with glowing red eyes emerging from the darkness BEHIND the people, nightmare fuel, terrifying",
+            "Using the provided image of people, add a terrifying set of zombies creeping up BEHIND the people at the door. Only add zombies behind the people, do not modify anything else",
+            "Using the provided image of people, add a grim reaper with a dark hooded cloak creeping menacingly BEHIND the people. Only add a grim reaper, do not modify anything else.",
+            "Using the provided image of people, add a creepy pale ghost with long black hair and a white dress creeping BEHIND the people. Only add a ghost, do not modify anything else.",
+            "Using the provided image of people, add a scary demonic figure with glowing red eyes creeping BEHIND the people. Only add a demon, do not modify anything else.",
         ]
         prompt = random.choice(prompts)
 
