@@ -669,14 +669,12 @@ def trigger_scare_sequence(initial_screenshot, config, gemini_enabled):
         log(f"\n--- Scare Loop Iteration #{image_count + 1} ---", "SCARE")
 
         # STAGE 1: HANDS ANIMATION (only on first iteration)
+        # Frontend will handle timing - backend doesn't sleep
         if image_count == 0:
-            hands_duration = config.get('hands_animation_duration', 3)
-            log("👋 STAGE 1: Playing hands-going-away animation...", "SCARE")
+            log("👋 STAGE 1: Starting hands animation on frontend...", "SCARE")
             update_status("HANDS_ANIMATION", None, config)
-            log(f"⏳ Waiting {hands_duration}s for animation...", "DEBUG")
-            time.sleep(hands_duration)
 
-        # Capture fresh screenshot
+        # Capture fresh screenshot immediately
         log("📸 Capturing fresh screenshot...", "DEBUG")
         screenshot = capture_screen(config)
 
@@ -698,7 +696,7 @@ def trigger_scare_sequence(initial_screenshot, config, gemini_enabled):
                 log("  Skipping proximity check (debug mode or no API)", "DEBUG")
 
         # STAGE 2: DETECTING - Save snapshot and show "Evil Spirit Detector" overlay
-        log("🔍 STAGE 2: Showing detecting screen...", "SCARE")
+        log("🔍 STAGE 2: Setting detecting screen...", "SCARE")
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         snapshot_filename = f"detecting_snapshot_{timestamp}.png"
         snapshot_path = save_image(screenshot, snapshot_filename, config)
@@ -709,10 +707,10 @@ def trigger_scare_sequence(initial_screenshot, config, gemini_enabled):
 
         snapshot_relative = f"generated/{snapshot_filename}"
         update_status("DETECTING", snapshot_relative, config)
-        log("📷 Snapshot saved and detecting screen displayed", "DEBUG")
+        log("📷 Snapshot saved and detecting screen ready", "DEBUG")
 
-        # STAGE 3: Generate image (while DETECTING screen is showing)
-        log("🎨 STAGE 3: Generating scary image (in background)...", "SCARE")
+        # STAGE 3: Generate image immediately (AI runs while frontend shows animations)
+        log("🎨 STAGE 3: Starting AI generation...", "SCARE")
         if debug_mode:
             log("🧪 TEST MODE: Creating placeholder image", "SCARE")
             scary_image = create_placeholder_image(screenshot, image_count, config)

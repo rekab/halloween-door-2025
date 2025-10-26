@@ -193,7 +193,7 @@
 
     <!-- Hands Animation Container -->
     <div id="handsContainer" class="viewport-container">
-        <video id="handsVideo" autoplay playsinline draggable="false">
+        <video id="handsVideo" autoplay muted playsinline draggable="false">
             <source src="hands-going-away.mp4" type="video/mp4">
             Your browser does not support the video tag.
         </video>
@@ -297,6 +297,10 @@
 
         // Sound state
         let soundPlaying = false;
+
+        // Hands animation timing
+        let handsAnimationStartTime = null;
+        const HANDS_DURATION_MS = 7000; // 7 seconds (from config.json)
 
         // Set initial volume
         audio.volume = volumeSlider.value;
@@ -613,6 +617,19 @@
                     const imageChanged = data.image_url !== currentImageUrl;
 
                     if (stateChanged || imageChanged) {
+                        // Enforce hands animation timing - don't switch away until 7 seconds elapsed
+                        if ((data.state === "DETECTING" || data.state === "IMAGE") && handsAnimationStartTime !== null) {
+                            const elapsed = Date.now() - handsAnimationStartTime;
+                            if (elapsed < HANDS_DURATION_MS) {
+                                // Hands animation still playing, ignore state change for now
+                                console.log(`⏳ Waiting for hands animation (${Math.round((HANDS_DURATION_MS - elapsed) / 1000)}s remaining)`);
+                                return;
+                            } else {
+                                // Hands animation complete, clear the timestamp
+                                handsAnimationStartTime = null;
+                            }
+                        }
+
                         if (stateChanged) {
                             console.log(`State change: ${currentState} → ${data.state}`);
                         }
@@ -643,25 +660,35 @@
             if (newState === "VIDEO") {
                 console.log('📹 Returning to video');
                 videoContainer.style.display = 'block';
+                // Clear hands animation timing if returning to video
+                handsAnimationStartTime = null;
 
             } else if (newState === "HANDS_ANIMATION") {
                 console.log('👋 Playing hands animation');
                 handsContainer.style.display = 'block';
+                // Record start time for timing enforcement
+                handsAnimationStartTime = Date.now();
                 // Restart video from beginning
                 handsVideo.currentTime = 0;
-                handsVideo.play();
+                handsVideo.play().catch(error => {
+                    console.error('Failed to play hands video:', error);
+                });
 
             } else if (newState === "DETECTING" && imageUrl) {
                 console.log(`🔍 DETECTING! Showing snapshot: ${imageUrl}`);
                 // Load snapshot with cache-busting
                 detectingImage.src = imageUrl + `?t=${Date.now()}`;
                 detectingContainer.style.display = 'block';
+                // Clear hands animation timing once we actually show detecting
+                handsAnimationStartTime = null;
 
             } else if (newState === "IMAGE" && imageUrl) {
                 console.log(`👻 SCARE! Showing image: ${imageUrl}`);
                 // Load generated image with cache-busting
                 scareImage.src = imageUrl + `?t=${Date.now()}`;
                 scareContainer.style.display = 'block';
+                // Clear hands animation timing once we actually show scare image
+                handsAnimationStartTime = null;
             }
         }
 

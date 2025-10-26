@@ -8,7 +8,7 @@
   "max_images_per_group": 10,
 
   "cooldown_duration": 5,
-  "hands_animation_duration": 3,
+  "hands_animation_duration": 7,
 
   "output_dir": "static/generated",
   "status_file": "static/status.json",
