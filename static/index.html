@@ -251,12 +251,11 @@
             </label>
         </div>
         <div id="audioControls">
-            <button onclick="toggleSound()">Toggle Sound</button>
-            <input type="range" id="volumeSlider" min="0" max="1" step="0.1" value="0.5" onchange="updateVolume()">
+            <button id="enableSoundButton" onclick="enableSound()">Enable Sound</button>
         </div>
     </div>
 
-    <audio id="soundTrack" loop>
+    <audio id="soundTrack">
         <source src="warcry.mp3" type="audio/mp3">
         Your browser does not support the audio element.
     </audio>
@@ -274,7 +273,7 @@
         const detectingResizeHandle = document.getElementById('detectingResizeHandle');
         const handsResizeHandle = document.getElementById('handsResizeHandle');
         const audio = document.getElementById('soundTrack');
-        const volumeSlider = document.getElementById('volumeSlider');
+        const enableSoundButton = document.getElementById('enableSoundButton');
         const controls = document.getElementById('controls');
         const showControlsCheckbox = document.getElementById('showControls');
         const controlToggle = document.getElementById('controlToggle');
@@ -313,14 +312,14 @@
         let handsBorderVisible = false;
 
         // Sound state
-        let soundPlaying = false;
+        let soundEnabled = false;
 
         // Hands animation timing
         let handsAnimationStartTime = null;
         const HANDS_DURATION_MS = 7000; // 7 seconds (from config.json)
 
-        // Set initial volume
-        audio.volume = volumeSlider.value;
+        // Set volume to 100%
+        audio.volume = 1.0;
 
         // =====================================================================
         // CONTROL VISIBILITY
@@ -482,18 +481,19 @@
         // =====================================================================
         // AUDIO CONTROLS
         // =====================================================================
-        function toggleSound() {
-            if (soundPlaying) {
-                audio.pause();
-                soundPlaying = false;
-            } else {
-                audio.play();
-                soundPlaying = true;
+        function enableSound() {
+            if (!soundEnabled) {
+                // Play audio briefly to satisfy browser autoplay policy
+                audio.play().then(() => {
+                    audio.pause();
+                    audio.currentTime = 0;
+                    soundEnabled = true;
+                    enableSoundButton.textContent = '✅ Sound Enabled';
+                    console.log('🔊 Sound enabled by user');
+                }).catch(error => {
+                    console.error('Failed to enable sound:', error);
+                });
             }
-        }
-
-        function updateVolume() {
-            audio.volume = volumeSlider.value;
         }
 
         // =====================================================================
@@ -781,6 +781,13 @@
                 handsVideo.play().catch(error => {
                     console.error('Failed to play hands video:', error);
                 });
+                // Play sound once (if enabled)
+                if (soundEnabled) {
+                    audio.currentTime = 0;
+                    audio.play().catch(error => {
+                        console.error('Failed to play sound:', error);
+                    });
+                }
 
             } else if (newState === "DETECTING" && imageUrl) {
                 console.log(`🔍 DETECTING! Showing snapshot: ${imageUrl}`);
