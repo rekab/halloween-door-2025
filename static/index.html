@@ -363,8 +363,10 @@
                 container.style.left = left + 'px';
                 container.style.top = top + 'px';
 
-                // Save position if it's scare, detecting, or hands container
-                if (container === scareContainer) {
+                // Save position
+                if (container === videoContainer) {
+                    saveVideoPosition();
+                } else if (container === scareContainer) {
                     saveScarePosition();
                 } else if (container === detectingContainer) {
                     saveDetectingPosition();
@@ -393,8 +395,10 @@
                 container.style.width = finalWidth + 'px';
                 container.style.height = finalHeight + 'px';
 
-                // Save size if it's scare, detecting, or hands container
-                if (container === scareContainer) {
+                // Save size
+                if (container === videoContainer) {
+                    saveVideoPosition();
+                } else if (container === scareContainer) {
                     saveScarePosition();
                 } else if (container === detectingContainer) {
                     saveDetectingPosition();
@@ -452,6 +456,7 @@
             videoContainer.style.top = '0px';
             videoContainer.style.width = '50%';
             videoContainer.style.height = '50%';
+            saveVideoPosition();
         }
 
         function resetScarePosition() {
@@ -499,6 +504,31 @@
         // =====================================================================
         // LOCALSTORAGE PERSISTENCE
         // =====================================================================
+        function saveVideoPosition() {
+            localStorage.setItem('videoContainer_left', videoContainer.style.left);
+            localStorage.setItem('videoContainer_top', videoContainer.style.top);
+            localStorage.setItem('videoContainer_width', videoContainer.style.width);
+            localStorage.setItem('videoContainer_height', videoContainer.style.height);
+        }
+
+        function loadVideoPosition() {
+            const left = localStorage.getItem('videoContainer_left');
+            const top = localStorage.getItem('videoContainer_top');
+            const width = localStorage.getItem('videoContainer_width');
+            const height = localStorage.getItem('videoContainer_height');
+
+            if (left && top && width && height) {
+                videoContainer.style.left = left;
+                videoContainer.style.top = top;
+                videoContainer.style.width = width;
+                videoContainer.style.height = height;
+                console.log('✅ Restored video container position from localStorage');
+            } else {
+                // Set defaults
+                resetVideoPosition();
+            }
+        }
+
         function saveScarePosition() {
             localStorage.setItem('scareContainer_left', scareContainer.style.left);
             localStorage.setItem('scareContainer_top', scareContainer.style.top);
@@ -694,7 +724,7 @@
         // =====================================================================
         // INITIALIZATION
         // =====================================================================
-        resetVideoPosition();
+        loadVideoPosition();
         loadScarePosition();
         loadDetectingPosition();
         loadHandsPosition();
