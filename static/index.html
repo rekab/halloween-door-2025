@@ -260,6 +260,11 @@
         Your browser does not support the audio element.
     </audio>
 
+    <audio id="ghostScannerSound">
+        <source src="ghost-scanner-sound.mp3" type="audio/mp3">
+        Your browser does not support the audio element.
+    </audio>
+
     <script>
         // =====================================================================
         // ELEMENT REFERENCES
@@ -273,6 +278,7 @@
         const detectingResizeHandle = document.getElementById('detectingResizeHandle');
         const handsResizeHandle = document.getElementById('handsResizeHandle');
         const audio = document.getElementById('soundTrack');
+        const ghostScannerSound = document.getElementById('ghostScannerSound');
         const enableSoundButton = document.getElementById('enableSoundButton');
         const controls = document.getElementById('controls');
         const showControlsCheckbox = document.getElementById('showControls');
@@ -320,6 +326,7 @@
 
         // Set volume to 100%
         audio.volume = 1.0;
+        ghostScannerSound.volume = 1.0;
 
         // =====================================================================
         // CONTROL VISIBILITY
@@ -487,6 +494,12 @@
                 audio.play().then(() => {
                     audio.pause();
                     audio.currentTime = 0;
+
+                    // Also test ghost scanner sound
+                    return ghostScannerSound.play();
+                }).then(() => {
+                    ghostScannerSound.pause();
+                    ghostScannerSound.currentTime = 0;
                     soundEnabled = true;
                     enableSoundButton.textContent = '✅ Sound Enabled';
                     console.log('🔊 Sound enabled by user');
@@ -781,11 +794,11 @@
                 handsVideo.play().catch(error => {
                     console.error('Failed to play hands video:', error);
                 });
-                // Play sound once (if enabled)
+                // Play ghost scanner sound once (if enabled)
                 if (soundEnabled) {
-                    audio.currentTime = 0;
-                    audio.play().catch(error => {
-                        console.error('Failed to play sound:', error);
+                    ghostScannerSound.currentTime = 0;
+                    ghostScannerSound.play().catch(error => {
+                        console.error('Failed to play ghost scanner sound:', error);
                     });
                 }
 
@@ -796,6 +809,13 @@
                 detectingContainer.style.display = 'block';
                 // Clear hands animation timing once we actually show detecting
                 handsAnimationStartTime = null;
+                // Play ghost scanner sound once (if enabled)
+                if (soundEnabled) {
+                    ghostScannerSound.currentTime = 0;
+                    ghostScannerSound.play().catch(error => {
+                        console.error('Failed to play ghost scanner sound:', error);
+                    });
+                }
 
             } else if (newState === "IMAGE" && imageUrl) {
                 console.log(`👻 SCARE! Showing image: ${imageUrl}`);
