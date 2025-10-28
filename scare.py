@@ -123,7 +123,7 @@ def init_gemini(api_key):
 
 def check_proximity_gemini(screenshot_pil, config):
     """
-    Use Gemini Vision API to check if people are within 3 feet
+    Use Gemini Vision API to check if people are within 10 feet
     Returns: "YES", "NO", or None on error
     """
     log("🔍 Checking proximity with Gemini Vision API...", "DEBUG")
@@ -132,7 +132,7 @@ def check_proximity_gemini(screenshot_pil, config):
         model = genai_vision.GenerativeModel('gemini-2.0-flash-exp')
 
         prompt = (
-            "Are there people visible within 3 feet of the camera AND facing toward the camera? "
+            "Are there people visible within 10 feet of the camera AND facing toward the camera? "
             "Answer ONLY: YES or NO"
         )
 
@@ -147,10 +147,10 @@ def check_proximity_gemini(screenshot_pil, config):
         log(f"  Gemini Vision response: '{result}' ({elapsed:.2f}s)", "DEBUG")
 
         if "YES" in result:
-            log("✅ People detected within 3 feet!", "SUCCESS")
+            log("✅ People detected within 10 feet!", "SUCCESS")
             return "YES"
         else:
-            log("  No people within 3 feet", "DEBUG")
+            log("  No people within 10 feet", "DEBUG")
             return "NO"
 
     except Exception as e:
@@ -923,7 +923,7 @@ def main():
                 proximity_result = check_proximity_gemini(current_screenshot, config)
 
                 if proximity_result != "YES":
-                    log("No people within 3 feet, ignoring motion", "DEBUG")
+                    log("No people within 10 feet, ignoring motion", "DEBUG")
                     time.sleep(motion_check_interval)
                     continue
             else:
