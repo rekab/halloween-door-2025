@@ -10,7 +10,10 @@ trick-or-treaters until they leave.
 ## 🎯 How It Works
 
 1. **Default State**: Creepy hands video loops on projector
-2. **Motion Detection**: System detects movement via screen capture
+2. **Motion Detection**: System detects movement via screen capture. Tried
+   using the Nest API but it's really painful (it starts with $5 for device
+   access, then setting up OAuth... and _gets worse from there_), so
+   it's easier to run the Nest viewer full screen and capture that.
 3. **Proximity Check**: Gemini Vision API confirms people are within 3 feet
 4. **Continuous Scare Loop**:
    - Take screenshot
