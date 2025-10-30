@@ -1,6 +1,11 @@
 # 🎃 Halloween Doorbell Scare System
 
-A Python-based Halloween scare system that displays looping creepy hands video on a projector, then generates AI-powered terrifying ghost images **continuously** behind trick-or-treaters until they leave.
+A Python-based Halloween scare system that displays looping creepy hands video
+on a projector, then generates AI-modified halloween images continuously of
+trick-or-treaters until they leave.
+
+
+[![Video of the project in action](https://img.youtube.com/vi/-9dDK1ihY8A/0.jpg)](https://www.youtube.com/watch?v=-9dDK1ihY8A)
 
 ## 🎯 How It Works
 
